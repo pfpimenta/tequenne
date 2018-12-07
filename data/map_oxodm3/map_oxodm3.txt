@@ -1,0 +1,38 @@
+============================================================
+Datum:		06 May 2012
+File:		map_oxodm3.pk3
+Autor:		Oleg "OXOTHuK" Perezhogin
+Email:		id1991620@yandex.ru
+URL:		http://vk.com/oxothuk
+ICQ		3459850
+
+============================================================
+Map information
+
+Modification:		CPMA/OSP
+New sound effects:	No
+New Textures:		Yes
+New Music:		No
+
+How to play:      	Place map_oxodm3.pk3 in your baseq3 directory. The map
+			is selectable in the menu. 
+                 	
+============================================================
+Editor:         	GtkRadiant 1.5.0
+Other tools:		Notepad, Photoshop
+Known bugs:		-
+
+============================================================
+Distribution / Copyright / Permissions 
+
+Copyright (c) 2012 Oleg "OXOTHuK" Perezhogin
+All rights reserved.
+
+Quake III Arena is a registered trademark of id Software, Inc.
+
+This level may be electronically distributed only at NO
+CHARGE to the recipient in its current state, MUST include
+this .txt file, and may NOT be modified IN ANY WAY. UNDER NO
+CIRCUMSTANCES IS THIS LEVEL TO BE DISTRIBUTED ON ANY PORTABLE
+DEVICE OR UPLOADED TO THE INTERNET WITHOUT PRIOR WRITTEN PERMISSION.
+============================================================
