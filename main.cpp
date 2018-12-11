@@ -35,7 +35,7 @@ int main()
   is::ISceneNode *node;
   node = smgr->addOctreeSceneNode(mesh->getMesh(0), nullptr, -1, 1024);
   // Translation pour que nos personnages soient dans le décor
-  node->setPosition(core::vector3df(0,-30,0));
+  node->setPosition(core::vector3df(0,-23,-1200));
 
   // Chargement de notre personnage (réutilisé plusieurs fois)
   is::IAnimatedMesh *mesh_player1 = smgr->getMesh("data/data_tp/tris.md2");
@@ -46,17 +46,19 @@ int main()
   player1->setMaterialFlag(iv::EMF_LIGHTING, false);
   player1->setMD2Animation(is::EMAT_STAND);
   player1->setMaterialTexture(0, driver->getTexture("data/data_tp/blue_texture.pcx"));
+  player1->setPosition(player1->getPosition() + ic::vector3df(0, 0, 100));
 
   // Attachement du PLAYER 2 dans la scène
   is::IAnimatedMeshSceneNode *player2 = smgr->addAnimatedMeshSceneNode(mesh_player2);
   player2->setMaterialFlag(iv::EMF_LIGHTING, false);
   player2->setMD2Animation(is::EMAT_STAND);
   player2->setMaterialTexture(0, driver->getTexture("data/data_tp/red_texture.pcx"));
+  player2->setPosition(player2->getPosition() + ic::vector3df(0, 0, -100));
 
 
 
   // camera mode COMBAT // TODO
-  is::ICameraSceneNode* camera_combat = smgr->addCameraSceneNode(nullptr, ic::vector3df(0, 30, -70), ic::vector3df(0, 5, 0));
+  is::ICameraSceneNode* camera_combat = smgr->addCameraSceneNode(nullptr, 30*ic::vector3df(2.3, 0.5, 0), ic::vector3df(0, 5, 0));
   // Mode FREELOOK "superman camera"
   is::ICameraSceneNode* camera_freelook = smgr->addCameraSceneNodeFPS();
 
@@ -71,6 +73,7 @@ int main()
   
   // current camera mode flag
   char camera_mode = 'c'; // 'c' combat ou 'f' freelook
+  smgr->setActiveCamera(camera_combat);
 
   while(device->run())
   {
@@ -83,13 +86,17 @@ int main()
 	ic::vector3df fight_center = (player1->getPosition() + player2->getPosition())/2.0f;
 	smgr->getActiveCamera()->setTarget(fight_center);
 	// distance de la camera
-	ic::vector3df offset = ic::vector3df(0, 1, -2);
+	ic::vector3df offset = ic::vector3df(2.3, 0.5, 0);
 	//float distance_players = norm(player1->getPosition() - player2->getPosition());
 	float distance_players = player1->getPosition().getDistanceFrom(player2->getPosition());
-	ic::vector3df new_cam_pos = fight_center + offset*(30+distance_players/3);
+	ic::vector3df new_cam_pos = fight_center + offset*(30+distance_players/5);
 	smgr->getActiveCamera()->setPosition(new_cam_pos);
 
     }
+    
+    // debug print camera position: 
+    //ic::vector3df cam_pos = smgr->getActiveCamera()->getPosition();
+    //std::cout <<"debug cam pos: " << cam_pos.X << ", " << cam_pos.Y  << ", " << cam_pos.Z <<std::endl;
       
     // change camera if C key was pressed
     if(receiver.change_cam == true){

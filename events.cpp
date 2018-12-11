@@ -36,20 +36,18 @@ bool EventReceiver::keyboard(const SEvent &event)
 	  change_cam = true;
           break;
         case KEY_KEY_Z: // jump P1
-	  p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 1, 0);
-	  player1->setPosition(p1_position);
 	  new_animation = 'r';
           break;
         case KEY_KEY_S: // crouch P1
 	  new_animation = 'r';
           break;
         case KEY_KEY_D: // marcher vers la droite P1
-	  p1_position = player1->getPosition() + vitesse * ic::vector3df(1, 0, 0);
+	  p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, 1);
 	  player1->setPosition(p1_position);
 	  new_animation = 'r';
           break;
         case KEY_KEY_Q: // marcher vers la gauche P1
-	  p1_position = player1->getPosition() + vitesse * ic::vector3df(-1, 0, 0);
+	  p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, -1);
 	  player1->setPosition(p1_position);
 	  new_animation = 'r';
 	  break;
