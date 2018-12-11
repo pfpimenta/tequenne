@@ -1,6 +1,10 @@
 #include <iostream>
 #include <irrlicht.h>
 
+#define WIDTH 640
+#define HEIGHT 480
+
+
 #include "events.h"
 #include "gui.h"
 
@@ -9,6 +13,8 @@ using namespace irr;
 namespace ic = irr::core;
 namespace is = irr::scene;
 namespace iv = irr::video;
+namespace ig = irr::gui;
+
 
 int main()
 {
@@ -16,11 +22,24 @@ int main()
   EventReceiver receiver;
   // Création de la fenêtre et du système de rendu.
   IrrlichtDevice *device = createDevice(iv::EDT_OPENGL,
-                                        ic::dimension2d<u32>(640, 480),
+                                        ic::dimension2d<u32>(WIDTH, HEIGHT),
                                         16, false, false, false, &receiver);
 
   iv::IVideoDriver  *driver = device->getVideoDriver();
   is::ISceneManager *smgr = device->getSceneManager();
+  // Le GUI
+  //gui = device->getGUIEnvironment();
+  ig::IGUIEnvironment *gui  = device->getGUIEnvironment();
+  iv::ITexture *blueLP = driver->getTexture("data/gui/lifePointsBleuBorde.png");
+  iv::ITexture *redLP = driver->getTexture("data/gui/lifePointsRouge.png");
+  
+  ig::IGUIImage *barre_p1 = gui->addImage(ic::rect<s32>(10,10, WIDTH/2 - 10,50));
+  barre_p1->setScaleImage(true);
+  barre_p1->setImage(blueLP);
+  
+  ig::IGUIImage *barre_p2 = gui->addImage(ic::rect<s32>(WIDTH/2,10, WIDTH - 10,50));
+  barre_p2->setScaleImage(true);
+  barre_p2->setImage(blueLP);
 
   // Ajout de l'archive qui contient entre autres un niveau complet
   //device->getFileSystem()->addFileArchive("data/data_tp/map-20kdm2.pk3");
@@ -116,7 +135,8 @@ int main()
     
     // Dessin de la scène :
     smgr->drawAll();
-    // 
+    //  dessin de la gui
+    gui->drawAll();
     driver->endScene();
   }
   device->drop();

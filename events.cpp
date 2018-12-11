@@ -32,7 +32,12 @@ bool EventReceiver::keyboard(const SEvent &event)
     float distance;
     
     if(event.EventType == irr::EET_KEY_INPUT_EVENT){
+      
+	// capturer les touches qui ont ete appuyees:
 	keys[event.KeyInput.Key] = event.KeyInput.PressedDown;
+	
+	// consequence des touches:
+	
 	if(keys[KEY_ESCAPE]){
            exit(0);
 	}
