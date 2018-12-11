@@ -38,26 +38,39 @@ int main()
   //node->setPosition(core::vector3df(-1300,-104,-1249));
 
   // Chargement de notre personnage (réutilisé plusieurs fois)
-  is::IAnimatedMesh *mesh_perso = smgr->getMesh("data/data_tp/tris.md2");
+  is::IAnimatedMesh *mesh_player1 = smgr->getMesh("data/data_tp/tris.md2");
+  is::IAnimatedMesh *mesh_player2 = smgr->getMesh("data/data_tp/tris.md2");
 
-  // Attachement de notre personnage dans la scène
-  is::IAnimatedMeshSceneNode *perso = smgr->addAnimatedMeshSceneNode(mesh_perso);
-  perso->setMaterialFlag(iv::EMF_LIGHTING, false);
-  perso->setMD2Animation(is::EMAT_STAND);
-  perso->setMaterialTexture(0, driver->getTexture("data/data_tp/blue_texture.pcx"));
+  // Attachement du PLAYER 1 dans la scène
+  is::IAnimatedMeshSceneNode *player1 = smgr->addAnimatedMeshSceneNode(mesh_player1);
+  player1->setMaterialFlag(iv::EMF_LIGHTING, false);
+  player1->setMD2Animation(is::EMAT_STAND);
+  player1->setMaterialTexture(0, driver->getTexture("data/data_tp/blue_texture.pcx"));
+
+  // Attachement du PLAYER 2 dans la scène
+  is::IAnimatedMeshSceneNode *player2 = smgr->addAnimatedMeshSceneNode(mesh_player2);
+  player2->setMaterialFlag(iv::EMF_LIGHTING, false);
+  player2->setMD2Animation(is::EMAT_STAND);
+  player2->setMaterialTexture(0, driver->getTexture("data/data_tp/red_texture.pcx"));
 
 
 
   // camera mode COMBAT // TODO
-  //is::ICameraSceneNode* camera = smgr->addCameraSceneNode(nullptr, ic::vector3df(0, 30, -70), ic::vector3df(0, 5, 0));
+  is::ICameraSceneNode* camera_combat = smgr->addCameraSceneNode(nullptr, ic::vector3df(0, 30, -70), ic::vector3df(0, 5, 0));
   // Mode FREELOOK "superman camera"
-  is::ICameraSceneNode* camera = smgr->addCameraSceneNodeFPS();
+  is::ICameraSceneNode* camera_freelook = smgr->addCameraSceneNodeFPS();
 
   
   
   // send node and cam to EventReceiver class
-  receiver.node = perso;
-  receiver.cam = camera;
+  receiver.node = player1;
+  receiver.player1 = player1;
+  receiver.player2 = player2;
+  receiver.cam_combat = camera_combat;
+  receiver.cam_freelook = camera_freelook;
+  
+  // current camera mode flag
+  char camera_mode = 'c'; // 'c' combat ou 'f' freelook
 
   while(device->run())
   {
@@ -68,6 +81,17 @@ int main()
     //ic::vector3df fight_center = ic::vector3df(0, 0, 0); //TODO
     //smgr->getActiveCamera()->setTarget(fight_center);
     
+    // change camera if C key was pressed
+    if(receiver.change_cam == true){
+      receiver.change_cam = false;
+      if(camera_mode == 'f'){
+	smgr->setActiveCamera(camera_combat);
+	camera_mode = 'c';
+      }else if(camera_mode == 'c'){
+	smgr->setActiveCamera(camera_freelook);
+	camera_mode = 'f';
+      }
+    }
     
     // Dessin de la scène :
     smgr->drawAll();

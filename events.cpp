@@ -31,6 +31,9 @@ bool EventReceiver::keyboard(const SEvent &event)
       {
         case KEY_ESCAPE:
           exit(0);
+	case KEY_KEY_C: // change camera: combat <-> freelook
+	  change_cam = true;
+          break;
         case KEY_KEY_Z: // jump P1
 	  new_animation = 'r';
           break;
