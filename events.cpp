@@ -22,6 +22,7 @@ EventReceiver::EventReceiver()
 bool EventReceiver::keyboard(const SEvent &event)
 {
     ic::vector3df p1_position;
+    ic::vector3df p2_position;
     // Si l'événement est de type clavier (KEY_INPUT)
     // et du genre pressage de touche
     // et que la touche est escape, on sort du programme
@@ -58,9 +59,13 @@ bool EventReceiver::keyboard(const SEvent &event)
 	  new_animation = 'r';
           break;
         case KEY_RIGHT: // marcher vers la droite P2
+	  p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, 1);
+	  player2->setPosition(p2_position);
 	  new_animation = 'r';
           break;
         case KEY_LEFT: // marcher vers la gauche P2
+	  p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, -1);
+	  player2->setPosition(p2_position);
 	  new_animation = 'r';
 	  break;
         default:;

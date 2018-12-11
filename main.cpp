@@ -25,19 +25,24 @@ int main()
   //device->getFileSystem()->addFileArchive("data/data_tp/map-20kdm2.pk3");
   //device->getFileSystem()->addFileArchive("data/riotarena/riotarena.pk3"); // ne marche pas: 0 nodes
   device->getFileSystem()->addFileArchive("data/map_oxodm3/map_oxodm3.pk3"); // cs_assault
+  //device->getFileSystem()->addFileArchive("data/DBZArena.zip"); // DBZ arena
   //device->getFileSystem()->addFileArchive("data/tig_den/tig_den.pk3"); // moche / bugged
 
   // On charge un bsp (un niveau) en particulier :
   //is::IAnimatedMesh *mesh = smgr->getMesh("20kdm2.bsp");
   //is::IAnimatedMesh *mesh = smgr->getMesh("riotarena.bsp"); // ne marche pas
   is::IAnimatedMesh *mesh = smgr->getMesh("oxodm3.bsp"); // cs_assault
+  //is::IAnimatedMesh *mesh = smgr->getMesh("Tenkaichi_Budokai_Arena.obj"); // DBZ arena
   //is::IAnimatedMesh *mesh = smgr->getMesh("tig_den.bsp"); // moche / bugged
   is::ISceneNode *node;
   node = smgr->addOctreeSceneNode(mesh->getMesh(0), nullptr, -1, 1024);
+  //node->setMaterialFlag(iv::EMF_LIGHTING, false); // decommenter en dependant du map
+  //node->setMaterialType(iv::EMT_TRANSPARENT_ALPHA_CHANNEL); // decommenter en dependant du map
   // Translation pour que nos personnages soient dans le décor
   node->setPosition(core::vector3df(0,-23,-1200));
+  
 
-  // Chargement de notre personnage (réutilisé plusieurs fois)
+  // Chargement de nos players
   is::IAnimatedMesh *mesh_player1 = smgr->getMesh("data/data_tp/tris.md2");
   is::IAnimatedMesh *mesh_player2 = smgr->getMesh("data/data_tp/tris.md2");
 
@@ -46,6 +51,7 @@ int main()
   player1->setMaterialFlag(iv::EMF_LIGHTING, false);
   player1->setMD2Animation(is::EMAT_STAND);
   player1->setMaterialTexture(0, driver->getTexture("data/data_tp/blue_texture.pcx"));
+  player1->setRotation(ic::vector3df(0, 90, 0));
   player1->setPosition(player1->getPosition() + ic::vector3df(0, 0, 100));
 
   // Attachement du PLAYER 2 dans la scène
@@ -53,11 +59,10 @@ int main()
   player2->setMaterialFlag(iv::EMF_LIGHTING, false);
   player2->setMD2Animation(is::EMAT_STAND);
   player2->setMaterialTexture(0, driver->getTexture("data/data_tp/red_texture.pcx"));
+  player2->setRotation(ic::vector3df(0, -90, 0));
   player2->setPosition(player2->getPosition() + ic::vector3df(0, 0, -100));
 
-
-
-  // camera mode COMBAT // TODO
+  // camera mode COMBAT
   is::ICameraSceneNode* camera_combat = smgr->addCameraSceneNode(nullptr, 30*ic::vector3df(2.3, 0.5, 0), ic::vector3df(0, 5, 0));
   // Mode FREELOOK "superman camera"
   is::ICameraSceneNode* camera_freelook = smgr->addCameraSceneNodeFPS();
