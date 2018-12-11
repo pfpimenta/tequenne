@@ -1,12 +1,21 @@
 #include <iostream>
 #include <irrlicht.h>
+#include "events.h"
+#include "gui.h"
+
 
 #define WIDTH 640
 #define HEIGHT 480
+#define MIN_DIST_P1_P2 23
+#define MAX_DIST_P1_P2 200
+#define MUR_Z_DROITE 390
+#define MUR_Z_GAUCHE -240
+#define BARRES_HAUT 10
+#define BARRES_BAS 50
+#define BARRES_BORDE 3
+#define BARRE_TAILLE_H WIDTH/2 - 20
 
 
-#include "events.h"
-#include "gui.h"
 
 using namespace irr;
 
@@ -14,6 +23,20 @@ namespace ic = irr::core;
 namespace is = irr::scene;
 namespace iv = irr::video;
 namespace ig = irr::gui;
+
+char new_animation = 's'; // 's': stand, 'r': run, 'b': back
+char old_animation = 's';
+bool change_cam = false;
+float vitesse = 1.25;    
+ic::vector3df p1_position;
+ic::vector3df p2_position;
+float distance;
+
+float points_vie_p1 = 100.0f;
+float points_vie_p2 = 100.0f;
+float taille_barre_rouge_p1 = (100.0f - points_vie_p1) * BARRE_TAILLE_H;
+float taille_barre_rouge_p2 = (100.0f - points_vie_p2) * BARRE_TAILLE_H;
+
 
 
 int main()
@@ -28,19 +51,45 @@ int main()
   iv::IVideoDriver  *driver = device->getVideoDriver();
   is::ISceneManager *smgr = device->getSceneManager();
   // Le GUI
-  //gui = device->getGUIEnvironment();
+  //Gui *gui = device->getGUIEnvironment();
   ig::IGUIEnvironment *gui  = device->getGUIEnvironment();
   iv::ITexture *blueLP = driver->getTexture("data/gui/lifePointsBleuBorde.png");
   iv::ITexture *redLP = driver->getTexture("data/gui/lifePointsRouge.png");
   
-  ig::IGUIImage *barre_p1 = gui->addImage(ic::rect<s32>(10,10, WIDTH/2 - 10,50));
-  barre_p1->setScaleImage(true);
-  barre_p1->setImage(blueLP);
   
-  ig::IGUIImage *barre_p2 = gui->addImage(ic::rect<s32>(WIDTH/2,10, WIDTH - 10,50));
-  barre_p2->setScaleImage(true);
-  barre_p2->setImage(blueLP);
-
+  ig::IGUIImage *barre_bleu_p1 = gui->addImage(ic::rect<s32>(10,BARRES_HAUT, WIDTH/2 - 10,BARRES_BAS));
+  barre_bleu_p1->setScaleImage(true);
+  barre_bleu_p1->setImage(blueLP);
+  
+  ig::IGUIImage *barre_bleu_p2 = gui->addImage(ic::rect<s32>(WIDTH/2,BARRES_HAUT, WIDTH - 10,BARRES_BAS));
+  barre_bleu_p2->setScaleImage(true);
+  barre_bleu_p2->setImage(blueLP);
+  
+  ig::IGUIImage *barre_rouge_p1 = gui->addImage(ic::rect<s32>(14,BARRES_HAUT+BARRES_BORDE,
+							      14+taille_barre_rouge_p1,45));
+  barre_rouge_p1->setScaleImage(true);
+  barre_rouge_p1->setImage(redLP);
+  barre_rouge_p1->setVisible(false);
+  
+  ig::IGUIImage *barre_rouge_p2 = gui->addImage(ic::rect<s32>(WIDTH/2 + 4,BARRES_HAUT+BARRES_BORDE,
+							      WIDTH/2 + 4 + taille_barre_rouge_p2,45));
+  barre_rouge_p2->setScaleImage(true);
+  barre_rouge_p2->setImage(redLP);
+  //barre_rouge_p2->setVisible(false);
+  // TODO finir ca 
+  ////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////
+  barre_rouge_p2->setRelativePosition(ic::rect<s32>(WIDTH/2 + 4,15, WIDTH - 100,45));
+  
+  
   // Ajout de l'archive qui contient entre autres un niveau complet
   //device->getFileSystem()->addFileArchive("data/data_tp/map-20kdm2.pk3");
   //device->getFileSystem()->addFileArchive("data/riotarena/riotarena.pk3"); // ne marche pas: 0 nodes
@@ -122,8 +171,8 @@ int main()
     //std::cout <<"debug cam pos: " << cam_pos.X << ", " << cam_pos.Y  << ", " << cam_pos.Z <<std::endl;
       
     // change camera if C key was pressed
-    if(receiver.change_cam == true){
-      receiver.change_cam = false;
+    if(change_cam == true){
+      change_cam = false;
       if(camera_mode == 'f'){
 	smgr->setActiveCamera(camera_combat);
 	camera_mode = 'c';
@@ -132,6 +181,58 @@ int main()
 	camera_mode = 'f';
       }
     }
+    
+    // consequence des touches:
+	if(receiver.keys[KEY_ESCAPE]){
+           exit(0);
+	}
+	if( receiver.keys[KEY_KEY_C]){ // change camera: combat <-> freelook
+	  change_cam = true;
+	}
+        if( receiver.keys[KEY_KEY_Z]){  // jump P1
+	  new_animation = 'r';
+	}
+        if( receiver.keys[KEY_KEY_S]){  // crouch P1
+	  new_animation = 'r';
+	}
+        if( receiver.keys[KEY_KEY_D]){ // marcher vers la droite P1
+	  p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, 1);
+	  distance = p1_position.getDistanceFrom(player2->getPosition());
+	  if(distance > MIN_DIST_P1_P2 ){
+	      player1->setPosition(p1_position);
+	  }
+	  new_animation = 'r';
+	}
+        if( receiver.keys[KEY_KEY_Q]){ // marcher vers la gauche P1
+	  p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, -1);
+	  distance = p1_position.getDistanceFrom(player2->getPosition());
+	  if(distance < MAX_DIST_P1_P2 && p1_position.Z > MUR_Z_GAUCHE){
+	      player1->setPosition(p1_position);
+	  }
+	  new_animation = 'r';
+	}
+        if( receiver.keys[KEY_UP]){ // jump P2
+	  new_animation = 'r';
+	}
+        if( receiver.keys[KEY_DOWN]){ // crouch P2
+	  new_animation = 'r';
+	}
+        if( receiver.keys[KEY_RIGHT]){ // marcher vers la droite P2
+	  p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, 1);
+	  distance = p2_position.getDistanceFrom(player1->getPosition());
+	  if(distance < MAX_DIST_P1_P2 && p2_position.Z < MUR_Z_DROITE){
+	      player2->setPosition(p2_position);
+	  }
+	  new_animation = 'r';
+	}
+        if( receiver.keys[KEY_LEFT]){ // marcher vers la gauche P2
+	  p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, -1);
+	  distance = p2_position.getDistanceFrom(player1->getPosition());
+	  if(distance > MIN_DIST_P1_P2 ){
+	      player2->setPosition(p2_position);
+	  }
+	  new_animation = 'r';
+	}
     
     // Dessin de la scène :
     smgr->drawAll();

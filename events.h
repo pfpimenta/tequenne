@@ -17,13 +17,6 @@ class EventReceiver : public irr::IEventReceiver
 {
 	bool button_pressed;
 	int old_x, old_y;
-	
-	float vitesse = 1.75;    
-
-	char new_animation = 's'; // 's': stand, 'r': run, 'b': back
-	char old_animation = 's';
-	
-
 
 	bool keyboard(const irr::SEvent &event);
 	bool mouse(const irr::SEvent &event);
