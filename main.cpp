@@ -2,6 +2,7 @@
 #include <irrlicht.h>
 
 #include "events.h"
+#include "gui.h"
 
 using namespace irr;
 
@@ -39,7 +40,7 @@ int main()
   //node->setMaterialFlag(iv::EMF_LIGHTING, false); // decommenter en dependant du map
   //node->setMaterialType(iv::EMT_TRANSPARENT_ALPHA_CHANNEL); // decommenter en dependant du map
   // Translation pour que nos personnages soient dans le décor
-  node->setPosition(core::vector3df(0,-23,-1200));
+  node->setPosition(core::vector3df(400,-23,-1200));
   
 
   // Chargement de nos players
@@ -51,16 +52,16 @@ int main()
   player1->setMaterialFlag(iv::EMF_LIGHTING, false);
   player1->setMD2Animation(is::EMAT_STAND);
   player1->setMaterialTexture(0, driver->getTexture("data/data_tp/blue_texture.pcx"));
-  player1->setRotation(ic::vector3df(0, 90, 0));
-  player1->setPosition(player1->getPosition() + ic::vector3df(0, 0, 100));
+  player1->setRotation(ic::vector3df(0, -90, 0));
+  player1->setPosition(player1->getPosition() + ic::vector3df(0, 0, -50));
 
   // Attachement du PLAYER 2 dans la scène
   is::IAnimatedMeshSceneNode *player2 = smgr->addAnimatedMeshSceneNode(mesh_player2);
   player2->setMaterialFlag(iv::EMF_LIGHTING, false);
   player2->setMD2Animation(is::EMAT_STAND);
   player2->setMaterialTexture(0, driver->getTexture("data/data_tp/red_texture.pcx"));
-  player2->setRotation(ic::vector3df(0, -90, 0));
-  player2->setPosition(player2->getPosition() + ic::vector3df(0, 0, -100));
+  player2->setRotation(ic::vector3df(0, 90, 0));
+  player2->setPosition(player2->getPosition() + ic::vector3df(0, 0, 50));
 
   // camera mode COMBAT
   is::ICameraSceneNode* camera_combat = smgr->addCameraSceneNode(nullptr, 30*ic::vector3df(2.3, 0.5, 0), ic::vector3df(0, 5, 0));
@@ -83,7 +84,8 @@ int main()
   while(device->run())
   {
     driver->beginScene(true, true, iv::SColor(100,150,200,255));
-
+    
+    float distance_players = player1->getPosition().getDistanceFrom(player2->getPosition());
     
     // make the camera follow the center of the fight
     if(camera_mode == 'c'){
@@ -92,11 +94,8 @@ int main()
 	smgr->getActiveCamera()->setTarget(fight_center);
 	// distance de la camera
 	ic::vector3df offset = ic::vector3df(2.3, 0.5, 0);
-	//float distance_players = norm(player1->getPosition() - player2->getPosition());
-	float distance_players = player1->getPosition().getDistanceFrom(player2->getPosition());
 	ic::vector3df new_cam_pos = fight_center + offset*(30+distance_players/5);
 	smgr->getActiveCamera()->setPosition(new_cam_pos);
-
     }
     
     // debug print camera position: 
