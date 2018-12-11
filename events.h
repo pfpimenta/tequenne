@@ -24,6 +24,7 @@ class EventReceiver : public irr::IEventReceiver
 	char old_animation = 's';
 	
 
+
 	bool keyboard(const irr::SEvent &event);
 	bool mouse(const irr::SEvent &event);
   public:
@@ -36,6 +37,7 @@ class EventReceiver : public irr::IEventReceiver
 	bool OnEvent(const irr::SEvent &event);
 	bool is_mouse_pressed(int &x, int &y);
 	bool change_cam = false;
+	bool keys[sizeof(irr::EKEY_CODE)];
 };
 
 #endif

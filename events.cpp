@@ -6,6 +6,8 @@
 
 #define MIN_DIST_P1_P2 23
 #define MAX_DIST_P1_P2 200
+#define MUR_Z_DROITE 390
+#define MUR_Z_GAUCHE -240
 
 using namespace irr;
 
@@ -16,7 +18,8 @@ using namespace irr;
 EventReceiver::EventReceiver()
   : button_pressed(false)
 {
-  
+  //initialization du array keys
+  for(int x=0; x< sizeof(irr::EKEY_CODE); x++) keys[x] = false;
 }
 
 /*------------------------------------------------------------------------*\
@@ -27,68 +30,59 @@ bool EventReceiver::keyboard(const SEvent &event)
     ic::vector3df p1_position;
     ic::vector3df p2_position;
     float distance;
-
-    // Si l'événement est de type clavier (KEY_INPUT)
-    // et du genre pressage de touche
-    // et que la touche est escape, on sort du programme
-    if (event.EventType == EET_KEY_INPUT_EVENT &&
-        event.KeyInput.PressedDown)
-    {
-      switch (event.KeyInput.Key)
-      {
-        case KEY_ESCAPE:
-          exit(0);
-	case KEY_KEY_C: // change camera: combat <-> freelook
+    
+    if(event.EventType == irr::EET_KEY_INPUT_EVENT){
+	keys[event.KeyInput.Key] = event.KeyInput.PressedDown;
+	if(keys[KEY_ESCAPE]){
+           exit(0);
+	}
+	if( keys[KEY_KEY_C]){ // change camera: combat <-> freelook
 	  change_cam = true;
-          break;
-        case KEY_KEY_Z: // jump P1
+	}
+        if( keys[KEY_KEY_Z]){  // jump P1
 	  new_animation = 'r';
-          break;
-        case KEY_KEY_S: // crouch P1
+	}
+        if( keys[KEY_KEY_S]){  // crouch P1
 	  new_animation = 'r';
-          break;
-        case KEY_KEY_D: // marcher vers la droite P1
+	}
+        if( keys[KEY_KEY_D]){ // marcher vers la droite P1
 	  p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, 1);
 	  distance = p1_position.getDistanceFrom(player2->getPosition());
 	  if(distance > MIN_DIST_P1_P2 ){
 	      player1->setPosition(p1_position);
 	  }
 	  new_animation = 'r';
-          break;
-        case KEY_KEY_Q: // marcher vers la gauche P1
+	}
+        if( keys[KEY_KEY_Q]){ // marcher vers la gauche P1
 	  p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, -1);
 	  distance = p1_position.getDistanceFrom(player2->getPosition());
-	  if(distance < MAX_DIST_P1_P2 ){
+	  if(distance < MAX_DIST_P1_P2 && p1_position.Z > MUR_Z_GAUCHE){
 	      player1->setPosition(p1_position);
 	  }
 	  new_animation = 'r';
-	  break;
-        case KEY_UP: // jump P2
+	}
+        if( keys[KEY_UP]){ // jump P2
 	  new_animation = 'r';
-          break;
-        case KEY_DOWN: // crouch P2
+	}
+        if( keys[KEY_DOWN]){ // crouch P2
 	  new_animation = 'r';
-          break;
-        case KEY_RIGHT: // marcher vers la droite P2
+	}
+        if( keys[KEY_RIGHT]){ // marcher vers la droite P2
 	  p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, 1);
 	  distance = p2_position.getDistanceFrom(player1->getPosition());
-	  if(distance < MAX_DIST_P1_P2 ){
+	  if(distance < MAX_DIST_P1_P2 && p2_position.Z < MUR_Z_DROITE){
 	      player2->setPosition(p2_position);
 	  }
 	  new_animation = 'r';
-          break;
-        case KEY_LEFT: // marcher vers la gauche P2
+	}
+        if( keys[KEY_LEFT]){ // marcher vers la gauche P2
 	  p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, -1);
 	  distance = p2_position.getDistanceFrom(player1->getPosition());
 	  if(distance > MIN_DIST_P1_P2 ){
 	      player2->setPosition(p2_position);
 	  }
 	  new_animation = 'r';
-	  break;
-        default:;
-      }
-    }else{
-	new_animation = 's'; // stop running
+	}
     }
     
         // character animation // TODO faire ca pour P1 et P2
