@@ -35,7 +35,7 @@ int main()
   is::ISceneNode *node;
   node = smgr->addOctreeSceneNode(mesh->getMesh(0), nullptr, -1, 1024);
   // Translation pour que nos personnages soient dans le décor
-  //node->setPosition(core::vector3df(-1300,-104,-1249));
+  node->setPosition(core::vector3df(0,-30,0));
 
   // Chargement de notre personnage (réutilisé plusieurs fois)
   is::IAnimatedMesh *mesh_player1 = smgr->getMesh("data/data_tp/tris.md2");
@@ -78,9 +78,19 @@ int main()
 
     
     // make the camera follow the center of the fight
-    //ic::vector3df fight_center = ic::vector3df(0, 0, 0); //TODO
-    //smgr->getActiveCamera()->setTarget(fight_center);
-    
+    if(camera_mode == 'c'){
+	// direction de la camera
+	ic::vector3df fight_center = (player1->getPosition() + player2->getPosition())/2.0f;
+	smgr->getActiveCamera()->setTarget(fight_center);
+	// distance de la camera
+	ic::vector3df offset = ic::vector3df(0, 1, -2);
+	//float distance_players = norm(player1->getPosition() - player2->getPosition());
+	float distance_players = player1->getPosition().getDistanceFrom(player2->getPosition());
+	ic::vector3df new_cam_pos = fight_center + offset*(30+distance_players/3);
+	smgr->getActiveCamera()->setPosition(new_cam_pos);
+
+    }
+      
     // change camera if C key was pressed
     if(receiver.change_cam == true){
       receiver.change_cam = false;

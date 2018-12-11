@@ -21,6 +21,7 @@ EventReceiver::EventReceiver()
 \*------------------------------------------------------------------------*/
 bool EventReceiver::keyboard(const SEvent &event)
 {
+    ic::vector3df p1_position;
     // Si l'événement est de type clavier (KEY_INPUT)
     // et du genre pressage de touche
     // et que la touche est escape, on sort du programme
@@ -35,15 +36,33 @@ bool EventReceiver::keyboard(const SEvent &event)
 	  change_cam = true;
           break;
         case KEY_KEY_Z: // jump P1
+	  p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 1, 0);
+	  player1->setPosition(p1_position);
 	  new_animation = 'r';
           break;
         case KEY_KEY_S: // crouch P1
 	  new_animation = 'r';
           break;
         case KEY_KEY_D: // marcher vers la droite P1
+	  p1_position = player1->getPosition() + vitesse * ic::vector3df(1, 0, 0);
+	  player1->setPosition(p1_position);
 	  new_animation = 'r';
           break;
         case KEY_KEY_Q: // marcher vers la gauche P1
+	  p1_position = player1->getPosition() + vitesse * ic::vector3df(-1, 0, 0);
+	  player1->setPosition(p1_position);
+	  new_animation = 'r';
+	  break;
+        case KEY_UP: // jump P2
+	  new_animation = 'r';
+          break;
+        case KEY_DOWN: // crouch P2
+	  new_animation = 'r';
+          break;
+        case KEY_RIGHT: // marcher vers la droite P2
+	  new_animation = 'r';
+          break;
+        case KEY_LEFT: // marcher vers la gauche P2
 	  new_animation = 'r';
 	  break;
         default:;
