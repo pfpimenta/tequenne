@@ -6,8 +6,8 @@
 
 #define WIDTH 640
 #define HEIGHT 480
-#define MIN_DIST_P1_P2 23
-#define MAX_DIST_P1_P2 200
+#define MIN_DIST_P1_P2 35
+#define MAX_DIST_P1_P2 250
 #define MUR_Z_DROITE 390
 #define MUR_Z_GAUCHE -240
 #define BARRES_HAUT 10
@@ -39,8 +39,25 @@ float taille_barre_rouge_p2 = (100.0f - points_vie_p2) * BARRE_TAILLE_H;
 
 
 
-int main()
+int main(int argc, char **argv)
 {
+  /*************************
+   * Parseur
+   ************************/
+  bool debug = false;
+  if (argc > 1)
+  {
+    if (std::string(argv[1]) == "debug")
+    {
+      debug = true;
+    }
+  }
+  std::cout << argc << ", " << argv[argc-1] << std::endl;
+  std::cout << "debug = " << debug << std::endl;
+
+  /***************************
+   * Creation de la scene
+   ***************************/
   // Le gestionnaire d'événements
   EventReceiver receiver;
   // Création de la fenêtre et du système de rendu.
@@ -50,8 +67,10 @@ int main()
 
   iv::IVideoDriver  *driver = device->getVideoDriver();
   is::ISceneManager *smgr = device->getSceneManager();
-  // Le GUI
-  //Gui *gui = device->getGUIEnvironment();
+  
+  /***************************
+   * Creation du GUI
+   ***************************/
   ig::IGUIEnvironment *gui  = device->getGUIEnvironment();
   iv::ITexture *blueLP = driver->getTexture("data/gui/lifePointsBleuBorde.png");
   iv::ITexture *redLP = driver->getTexture("data/gui/lifePointsRouge.png");
@@ -90,6 +109,9 @@ int main()
   barre_rouge_p2->setRelativePosition(ic::rect<s32>(WIDTH/2 + 4,15, WIDTH - 100,45));
   
   
+  /***************************
+   * Creation du monde
+   ***************************/
   // Ajout de l'archive qui contient entre autres un niveau complet
   //device->getFileSystem()->addFileArchive("data/data_tp/map-20kdm2.pk3");
   //device->getFileSystem()->addFileArchive("data/riotarena/riotarena.pk3"); // ne marche pas: 0 nodes
@@ -111,132 +133,157 @@ int main()
   node->setPosition(core::vector3df(400,-23,-1200));
   
 
-  // Chargement de nos players
-  is::IAnimatedMesh *mesh_player1 = smgr->getMesh("data/data_tp/tris.md2");
-  is::IAnimatedMesh *mesh_player2 = smgr->getMesh("data/data_tp/tris.md2");
+  /***************************
+   * Creation des personnages
+   ***************************/
+  // Chargement du mesh (une seule fois)
+  is::IAnimatedMesh *mesh_player = smgr->getMesh("data/personnages/Heihachi/heihachi.x");
 
   // Attachement du PLAYER 1 dans la scène
-  is::IAnimatedMeshSceneNode *player1 = smgr->addAnimatedMeshSceneNode(mesh_player1);
+  is::IAnimatedMeshSceneNode *player1 = smgr->addAnimatedMeshSceneNode(mesh_player);
   player1->setMaterialFlag(iv::EMF_LIGHTING, false);
-  player1->setMD2Animation(is::EMAT_STAND);
-  player1->setMaterialTexture(0, driver->getTexture("data/data_tp/blue_texture.pcx"));
-  player1->setRotation(ic::vector3df(0, -90, 0));
-  player1->setPosition(player1->getPosition() + ic::vector3df(0, 0, -50));
+  player1->setScale(ic::vector3df(15.0f, 15.0f, 15.0f));
+  player1->setRotation(ic::vector3df(0, -180, 0));
+  player1->setPosition(player1->getPosition() + ic::vector3df(0, -23.5f, -50));
+  player1->setAnimationSpeed(24);
+  player1->setFrameLoop(0, 12);
 
   // Attachement du PLAYER 2 dans la scène
-  is::IAnimatedMeshSceneNode *player2 = smgr->addAnimatedMeshSceneNode(mesh_player2);
+  is::IAnimatedMeshSceneNode *player2 = smgr->addAnimatedMeshSceneNode(mesh_player);
   player2->setMaterialFlag(iv::EMF_LIGHTING, false);
-  player2->setMD2Animation(is::EMAT_STAND);
-  player2->setMaterialTexture(0, driver->getTexture("data/data_tp/red_texture.pcx"));
-  player2->setRotation(ic::vector3df(0, 90, 0));
-  player2->setPosition(player2->getPosition() + ic::vector3df(0, 0, 50));
+  player2->setScale(ic::vector3df(15.0f, 15.0f, 15.0f));
+  player2->setRotation(ic::vector3df(0, 0, 0));
+  player2->setPosition(player2->getPosition() + ic::vector3df(0, -23.5f, 50));
+  player2->setAnimationSpeed(24);
+  player2->setFrameLoop(0, 12);
 
-  // camera mode COMBAT
-  is::ICameraSceneNode* camera_combat = smgr->addCameraSceneNode(nullptr, 30*ic::vector3df(2.3, 0.5, 0), ic::vector3df(0, 5, 0));
-  // Mode FREELOOK "superman camera"
-  is::ICameraSceneNode* camera_freelook = smgr->addCameraSceneNodeFPS();
 
+  /***************************
+   * Creation de la camera
+   ***************************/
+  is::ICameraSceneNode* camera;
+  if (debug)
+  {
+    // Mode FREELOOK "superman camera"
+    camera = smgr->addCameraSceneNodeFPS();
+  }
+  else
+  {
+    // camera mode COMBAT
+    camera = smgr->addCameraSceneNode(nullptr, 30*ic::vector3df(2.3, 0.5, 0), ic::vector3df(0, 5, 0));
+  }
+  smgr->setActiveCamera(camera);
   
   
-  // send node and cam to EventReceiver class
-  receiver.node = player1;
+  // send nodes and cam to EventReceiver class
   receiver.player1 = player1;
   receiver.player2 = player2;
-  receiver.cam_combat = camera_combat;
-  receiver.cam_freelook = camera_freelook;
-  
-  // current camera mode flag
-  char camera_mode = 'c'; // 'c' combat ou 'f' freelook
-  smgr->setActiveCamera(camera_combat);
+  receiver.cam = camera;
+
+  // Animation de déplacement
+  int frame_id = 0;
+  int frame = 36;
 
   while(device->run())
   {
     driver->beginScene(true, true, iv::SColor(100,150,200,255));
     
     float distance_players = player1->getPosition().getDistanceFrom(player2->getPosition());
-    
-    // make the camera follow the center of the fight
-    if(camera_mode == 'c'){
-	// direction de la camera
-	ic::vector3df fight_center = (player1->getPosition() + player2->getPosition())/2.0f;
-	smgr->getActiveCamera()->setTarget(fight_center);
-	// distance de la camera
-	ic::vector3df offset = ic::vector3df(2.3, 0.5, 0);
-	ic::vector3df new_cam_pos = fight_center + offset*(30+distance_players/5);
-	smgr->getActiveCamera()->setPosition(new_cam_pos);
+
+    /******** CAMERA **********/
+    if(debug) // Free look
+    {
+      // debug print camera position: 
+      ic::vector3df cam_pos = smgr->getActiveCamera()->getPosition();
+      std::cout <<"debug cam pos: " << cam_pos.X << ", " << cam_pos.Y  << ", " << cam_pos.Z <<std::endl;
+    }
+    else // make the camera follow the center of the fight
+    {
+      // direction de la camera
+      ic::vector3df fight_center = (player1->getPosition() + player2->getPosition())/2.0f;
+      fight_center.Y = 45.0f;
+      smgr->getActiveCamera()->setTarget(fight_center);
+      // distance de la camera
+      ic::vector3df offset = ic::vector3df(2.3, 0.5, 0);
+      ic::vector3df new_cam_pos = fight_center + offset*(30+distance_players/5);
+      smgr->getActiveCamera()->setPosition(new_cam_pos);
     }
     
-    // debug print camera position: 
-    //ic::vector3df cam_pos = smgr->getActiveCamera()->getPosition();
-    //std::cout <<"debug cam pos: " << cam_pos.X << ", " << cam_pos.Y  << ", " << cam_pos.Z <<std::endl;
-      
-    // change camera if C key was pressed
-    if(change_cam == true){
-      change_cam = false;
-      if(camera_mode == 'f'){
-	smgr->setActiveCamera(camera_combat);
-	camera_mode = 'c';
-      }else if(camera_mode == 'c'){
-	smgr->setActiveCamera(camera_freelook);
-	camera_mode = 'f';
+    if(receiver.keys[KEY_ESCAPE])
+    {
+      exit(0);
+    }
+
+    /******** Personnage 1 *******/
+    if( receiver.keys[KEY_KEY_Z]){  // jump P1
+      new_animation = 'r';
+    }
+
+    if( receiver.keys[KEY_KEY_S]){  // crouch P1
+      new_animation = 'r';
+    }
+
+    if( receiver.keys[KEY_KEY_D]){ // marcher vers la droite P1
+      frame = frame_id % 13 + 36;
+      frame_id ++; // ADD TIME ELAPSED CONTROL
+      player1->setCurrentFrame(frame);
+      p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, 1);
+      distance = p1_position.getDistanceFrom(player2->getPosition());
+      if(distance > MIN_DIST_P1_P2 )
+      {
+        player1->setPosition(p1_position);
+      }
+    }
+
+    if( receiver.keys[KEY_KEY_Q]) // marcher vers la gauche P1
+    {
+      player1->setFrameLoop(36, 48);
+      player1->setLoopMode(false);
+      p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, -1);
+      distance = p1_position.getDistanceFrom(player2->getPosition());
+      if(distance < MAX_DIST_P1_P2 && p1_position.Z > MUR_Z_GAUCHE)
+      {
+        player1->setPosition(p1_position);
+      }
+    }
+
+    /******** Personnage 2 *******/
+    if( receiver.keys[KEY_UP]) // jump P2
+    {
+      new_animation = 'r';
+    }
+    if( receiver.keys[KEY_DOWN]) // crouch P2
+    {
+      new_animation = 'r';
+    }
+
+    if( receiver.keys[KEY_RIGHT]) // marcher vers la droite P2
+    {
+      player2->setFrameLoop(36, 48);
+      player2->setLoopMode(false);
+      p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, 1);
+      distance = p2_position.getDistanceFrom(player1->getPosition());
+      if(distance < MAX_DIST_P1_P2 && p2_position.Z < MUR_Z_DROITE)
+      {
+        player2->setPosition(p2_position);
+      }
+    }
+
+    if( receiver.keys[KEY_LEFT]) // marcher vers la gauche P2
+    {
+      player2->setFrameLoop(36, 48);
+      player2->setLoopMode(false);
+      p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, -1);
+      distance = p2_position.getDistanceFrom(player1->getPosition());
+      if(distance > MIN_DIST_P1_P2 )
+      {
+        player2->setPosition(p2_position);
       }
     }
     
-    // consequence des touches:
-	if(receiver.keys[KEY_ESCAPE]){
-           exit(0);
-	}
-	if( receiver.keys[KEY_KEY_C]){ // change camera: combat <-> freelook
-	  change_cam = true;
-	}
-        if( receiver.keys[KEY_KEY_Z]){  // jump P1
-	  new_animation = 'r';
-	}
-        if( receiver.keys[KEY_KEY_S]){  // crouch P1
-	  new_animation = 'r';
-	}
-        if( receiver.keys[KEY_KEY_D]){ // marcher vers la droite P1
-	  p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, 1);
-	  distance = p1_position.getDistanceFrom(player2->getPosition());
-	  if(distance > MIN_DIST_P1_P2 ){
-	      player1->setPosition(p1_position);
-	  }
-	  new_animation = 'r';
-	}
-        if( receiver.keys[KEY_KEY_Q]){ // marcher vers la gauche P1
-	  p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, -1);
-	  distance = p1_position.getDistanceFrom(player2->getPosition());
-	  if(distance < MAX_DIST_P1_P2 && p1_position.Z > MUR_Z_GAUCHE){
-	      player1->setPosition(p1_position);
-	  }
-	  new_animation = 'r';
-	}
-        if( receiver.keys[KEY_UP]){ // jump P2
-	  new_animation = 'r';
-	}
-        if( receiver.keys[KEY_DOWN]){ // crouch P2
-	  new_animation = 'r';
-	}
-        if( receiver.keys[KEY_RIGHT]){ // marcher vers la droite P2
-	  p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, 1);
-	  distance = p2_position.getDistanceFrom(player1->getPosition());
-	  if(distance < MAX_DIST_P1_P2 && p2_position.Z < MUR_Z_DROITE){
-	      player2->setPosition(p2_position);
-	  }
-	  new_animation = 'r';
-	}
-        if( receiver.keys[KEY_LEFT]){ // marcher vers la gauche P2
-	  p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, -1);
-	  distance = p2_position.getDistanceFrom(player1->getPosition());
-	  if(distance > MIN_DIST_P1_P2 ){
-	      player2->setPosition(p2_position);
-	  }
-	  new_animation = 'r';
-	}
-    
-    // Dessin de la scène :
+    // Dessin de la scene :
     smgr->drawAll();
-    //  dessin de la gui
+    //  dessin du gui
     gui->drawAll();
     driver->endScene();
   }

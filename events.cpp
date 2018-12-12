@@ -15,7 +15,7 @@ EventReceiver::EventReceiver()
   : button_pressed(false)
 {
   //initialization du array keys
-  for(int x=0; x< sizeof(irr::EKEY_CODE); x++) keys[x] = false;
+  for(int x=0; x < irr::KEY_KEY_CODES_COUNT; x++) keys[x] = false;
 }
 
 /*------------------------------------------------------------------------*\
@@ -23,15 +23,17 @@ EventReceiver::EventReceiver()
 \*------------------------------------------------------------------------*/
 bool EventReceiver::keyboard(const SEvent &event)
 {
-    if(event.EventType == irr::EET_KEY_INPUT_EVENT){
-      
-	// capturer les touches qui ont ete appuyees:
-	keys[event.KeyInput.Key] = event.KeyInput.PressedDown;
-    }
+  if(event.EventType == irr::EET_KEY_INPUT_EVENT)
+  {   
+    // capturer les touches qui ont ete appuyees:
+    keys[event.KeyInput.Key] = event.KeyInput.PressedDown;
+  }
     
-        // character animation // TODO faire ca pour P1 et P2
-//     if(new_animation != old_animation){
-//       switch(new_animation){
+// character animation // TODO faire ca pour P1 et P2
+// if(new_animation != old_animation)
+// {
+//   switch(new_animation)
+//   {
 // 	case 's':
 // 	  perso->setMD2Animation(is::EMAT_STAND);
 // 	  break;
@@ -41,10 +43,9 @@ bool EventReceiver::keyboard(const SEvent &event)
 // 	case 'b':
 // 	  perso->setMD2Animation(is::EMAT_BOOM);
 // 	  break;  
-//       }
-//       old_animation = new_animation;
-//     }
-
+//   }
+//   old_animation = new_animation;
+// }
 
   return false;
 }
@@ -55,7 +56,7 @@ bool EventReceiver::keyboard(const SEvent &event)
 
 bool EventReceiver::mouse(const SEvent &event)
 {
-    return false;
+  return false;
 }
 
 /**************************************************************************\

@@ -22,15 +22,12 @@ class EventReceiver : public irr::IEventReceiver
 	bool mouse(const irr::SEvent &event);
   public:
 	EventReceiver();
-	is::IAnimatedMeshSceneNode *node;
 	is::IAnimatedMeshSceneNode *player1;
 	is::IAnimatedMeshSceneNode *player2;
-	irr::scene::ICameraSceneNode* cam_combat;
-	irr::scene::ICameraSceneNode* cam_freelook;
+	irr::scene::ICameraSceneNode* cam;
 	bool OnEvent(const irr::SEvent &event);
 	bool is_mouse_pressed(int &x, int &y);
-	bool change_cam = false;
-	bool keys[sizeof(irr::EKEY_CODE)];
+	bool keys[irr::KEY_KEY_CODES_COUNT];
 };
 
 #endif
