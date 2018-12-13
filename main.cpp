@@ -11,9 +11,9 @@
 #define MUR_Z_DROITE 390
 #define MUR_Z_GAUCHE -225
 #define BARRES_HAUT 10
-#define BARRES_BAS 50
-#define BARRES_BORDE 3
-#define BARRE_TAILLE_H WIDTH/2 - 20
+#define BARRES_BAS 30
+#define BARRES_BORDS 3
+#define BARRE_TAILLE_W float(WIDTH/2 - 38)
 
 
 
@@ -28,13 +28,6 @@ float vitesse = 1.25;
 ic::vector3df p1_position;
 ic::vector3df p2_position;
 float distance;
-
-float points_vie_p1 = 100.0f;
-float points_vie_p2 = 100.0f;
-float taille_barre_rouge_p1 = (100.0f - points_vie_p1) * BARRE_TAILLE_H;
-float taille_barre_rouge_p2 = (100.0f - points_vie_p2) * BARRE_TAILLE_H;
-
-
 
 int main(int argc, char **argv)
 {
@@ -66,7 +59,7 @@ int main(int argc, char **argv)
 
   iv::IVideoDriver  *driver = device->getVideoDriver();
   is::ISceneManager *smgr = device->getSceneManager();
-  irr::ITimer *timer = device->getTimer();
+  // irr::ITimer *timer = device->getTimer();
   
   /***************************
    * Creation du GUI
@@ -76,38 +69,36 @@ int main(int argc, char **argv)
   iv::ITexture *redLP = driver->getTexture("data/gui/lifePointsRouge.png");
   
   
-  ig::IGUIImage *barre_bleu_p1 = gui->addImage(ic::rect<s32>(10,BARRES_HAUT, WIDTH/2 - 10,BARRES_BAS));
+  /********* Life Points ********/
+  float points_vie_total_p1 = 100.0f;
+  float points_vie_manquant_p1 = 0.0f;
+  float points_vie_total_p2 = 100.0f;
+  float points_vie_manquant_p2 = 0.0f;
+  float taille_barre_rouge_p1 = (points_vie_manquant_p1 / points_vie_total_p1) * BARRE_TAILLE_W;
+  float taille_barre_rouge_p2 = (points_vie_manquant_p2 / points_vie_total_p2) * BARRE_TAILLE_W;
+
+  ig::IGUIImage *barre_bleu_p1 = gui->addImage(ic::rect<s32>(10,           BARRES_HAUT, 
+                                                             WIDTH/2 - 20, BARRES_BAS));
   barre_bleu_p1->setScaleImage(true);
   barre_bleu_p1->setImage(blueLP);
   
-  ig::IGUIImage *barre_bleu_p2 = gui->addImage(ic::rect<s32>(WIDTH/2,BARRES_HAUT, WIDTH - 10,BARRES_BAS));
+  ig::IGUIImage *barre_bleu_p2 = gui->addImage(ic::rect<s32>(WIDTH/2 + 20, BARRES_HAUT, 
+                                                             WIDTH-10,     BARRES_BAS));
   barre_bleu_p2->setScaleImage(true);
   barre_bleu_p2->setImage(blueLP);
   
-  ig::IGUIImage *barre_rouge_p1 = gui->addImage(ic::rect<s32>(14,BARRES_HAUT+BARRES_BORDE,
-							      14+taille_barre_rouge_p1,45));
+  ig::IGUIImage *barre_rouge_p1 = gui->addImage(ic::rect<s32>(14, BARRES_HAUT+BARRES_BORDS,
+							                                                14+taille_barre_rouge_p1, BARRES_BAS-BARRES_BORDS));
   barre_rouge_p1->setScaleImage(true);
   barre_rouge_p1->setImage(redLP);
   barre_rouge_p1->setVisible(false);
   
-  ig::IGUIImage *barre_rouge_p2 = gui->addImage(ic::rect<s32>(WIDTH/2 + 4,BARRES_HAUT+BARRES_BORDE,
-							      WIDTH/2 + 4 + taille_barre_rouge_p2,45));
+  ig::IGUIImage *barre_rouge_p2 = gui->addImage(ic::rect<s32>(WIDTH/2 + 24, BARRES_HAUT+BARRES_BORDS,
+							                                                WIDTH/2 + 24 + taille_barre_rouge_p2, BARRES_BAS-BARRES_BORDS));
   barre_rouge_p2->setScaleImage(true);
   barre_rouge_p2->setImage(redLP);
-  //barre_rouge_p2->setVisible(false);
-  // TODO finir ca 
-  ////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////
-  barre_rouge_p2->setRelativePosition(ic::rect<s32>(WIDTH/2 + 4,15, WIDTH - 100,45));
-  
+  barre_rouge_p2->setVisible(false);
+
   
   /***************************
    * Creation du monde
@@ -183,10 +174,6 @@ int main(int argc, char **argv)
   receiver.player2 = player2;
   receiver.cam = camera;
 
-  // Animation de déplacement
-  int frame_id = 0;
-  int frame = 36;
-
   // Booleens pour l animation
   animEnd1.enable_action = true;
   animEnd1.enable_movement = true;
@@ -236,6 +223,18 @@ int main(int argc, char **argv)
     {
       if (animEnd1.enable_action)
       {
+        // TODO 
+        // AJOUTER CONDITION DE COLLISION
+        // if (collision)
+        {
+          // Gestion des points de vie
+          barre_rouge_p2->setVisible(true);
+          points_vie_manquant_p2 += 5.0f;
+          taille_barre_rouge_p2 = (points_vie_manquant_p2 / points_vie_total_p2) * BARRE_TAILLE_W;
+          barre_rouge_p2->setRelativePosition(ic::rect<s32>(WIDTH/2 + 24, BARRES_HAUT+BARRES_BORDS, 
+                                                            WIDTH/2 + 24 + taille_barre_rouge_p2, BARRES_BAS-BARRES_BORDS));
+        }
+
         // Animation
         animEnd1.enable_action = false;
         animEnd1.enable_movement = false;
