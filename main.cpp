@@ -9,7 +9,7 @@
 #define MIN_DIST_P1_P2 35
 #define MAX_DIST_P1_P2 250
 #define MUR_Z_DROITE 390
-#define MUR_Z_GAUCHE -240
+#define MUR_Z_GAUCHE -225
 #define BARRES_HAUT 10
 #define BARRES_BAS 50
 #define BARRES_BORDE 3
@@ -24,9 +24,6 @@ namespace is = irr::scene;
 namespace iv = irr::video;
 namespace ig = irr::gui;
 
-char new_animation = 's'; // 's': stand, 'r': run, 'b': back
-char old_animation = 's';
-bool change_cam = false;
 float vitesse = 1.25;    
 ic::vector3df p1_position;
 ic::vector3df p2_position;
@@ -52,14 +49,16 @@ int main(int argc, char **argv)
       debug = true;
     }
   }
-  std::cout << argc << ", " << argv[argc-1] << std::endl;
-  std::cout << "debug = " << debug << std::endl;
 
   /***************************
    * Creation de la scene
    ***************************/
+
   // Le gestionnaire d'événements
   EventReceiver receiver;
+  // Le gestionnaire de fin d'animation
+  MyAnimationEndCallback animEnd1;
+  MyAnimationEndCallback animEnd2;
   // Création de la fenêtre et du système de rendu.
   IrrlichtDevice *device = createDevice(iv::EDT_OPENGL,
                                         ic::dimension2d<u32>(WIDTH, HEIGHT),
@@ -67,6 +66,7 @@ int main(int argc, char **argv)
 
   iv::IVideoDriver  *driver = device->getVideoDriver();
   is::ISceneManager *smgr = device->getSceneManager();
+  irr::ITimer *timer = device->getTimer();
   
   /***************************
    * Creation du GUI
@@ -113,25 +113,19 @@ int main(int argc, char **argv)
    * Creation du monde
    ***************************/
   // Ajout de l'archive qui contient entre autres un niveau complet
-  //device->getFileSystem()->addFileArchive("data/data_tp/map-20kdm2.pk3");
-  //device->getFileSystem()->addFileArchive("data/riotarena/riotarena.pk3"); // ne marche pas: 0 nodes
   device->getFileSystem()->addFileArchive("data/map_oxodm3/map_oxodm3.pk3"); // cs_assault
   //device->getFileSystem()->addFileArchive("data/DBZArena.zip"); // DBZ arena
-  //device->getFileSystem()->addFileArchive("data/tig_den/tig_den.pk3"); // moche / bugged
 
   // On charge un bsp (un niveau) en particulier :
-  //is::IAnimatedMesh *mesh = smgr->getMesh("20kdm2.bsp");
-  //is::IAnimatedMesh *mesh = smgr->getMesh("riotarena.bsp"); // ne marche pas
   is::IAnimatedMesh *mesh = smgr->getMesh("oxodm3.bsp"); // cs_assault
   //is::IAnimatedMesh *mesh = smgr->getMesh("Tenkaichi_Budokai_Arena.obj"); // DBZ arena
-  //is::IAnimatedMesh *mesh = smgr->getMesh("tig_den.bsp"); // moche / bugged
   is::ISceneNode *node;
   node = smgr->addOctreeSceneNode(mesh->getMesh(0), nullptr, -1, 1024);
   //node->setMaterialFlag(iv::EMF_LIGHTING, false); // decommenter en dependant du map
   //node->setMaterialType(iv::EMT_TRANSPARENT_ALPHA_CHANNEL); // decommenter en dependant du map
   // Translation pour que nos personnages soient dans le décor
   node->setPosition(core::vector3df(400,-23,-1200));
-  
+
 
   /***************************
    * Creation des personnages
@@ -147,6 +141,7 @@ int main(int argc, char **argv)
   player1->setPosition(player1->getPosition() + ic::vector3df(0, -23.5f, -50));
   player1->setAnimationSpeed(24);
   player1->setFrameLoop(0, 12);
+  player1->setAnimationEndCallback(&animEnd1);
 
   // Attachement du PLAYER 2 dans la scène
   is::IAnimatedMeshSceneNode *player2 = smgr->addAnimatedMeshSceneNode(mesh_player);
@@ -156,6 +151,7 @@ int main(int argc, char **argv)
   player2->setPosition(player2->getPosition() + ic::vector3df(0, -23.5f, 50));
   player2->setAnimationSpeed(24);
   player2->setFrameLoop(0, 12);
+  player2->setAnimationEndCallback(&animEnd2);
 
 
   /***************************
@@ -173,9 +169,16 @@ int main(int argc, char **argv)
     camera = smgr->addCameraSceneNode(nullptr, 30*ic::vector3df(2.3, 0.5, 0), ic::vector3df(0, 5, 0));
   }
   smgr->setActiveCamera(camera);
+
+  /****************************
+  * Creation de la lumiere
+  ***************************/
+  // PENSER A ENLEVER EMAT LIGHT FALSE SI LUMIERE DANS LA SCENE
+  // is::ILightSceneNode* light1 = smgr->addLightSceneNode(0, ic::vector3df(0,0,0),
+  //                                                       iv::SColorf(1.0f, 1.0f, 1.0f, 0.0f), 800.0f);
   
   
-  // send nodes and cam to EventReceiver class
+  // Envoyer les noeuds et la camera a la classe EventReceiver
   receiver.player1 = player1;
   receiver.player2 = player2;
   receiver.cam = camera;
@@ -184,6 +187,18 @@ int main(int argc, char **argv)
   int frame_id = 0;
   int frame = 36;
 
+  // Booleens pour l animation
+  animEnd1.enable_action = true;
+  animEnd1.enable_movement = true;
+  animEnd1.crouch = false;
+  animEnd2.enable_action = true;
+  animEnd2.enable_movement = true;
+  animEnd2.crouch = false;
+
+
+  /*************************
+   * MAIN LOOP
+   *************************/
   while(device->run())
   {
     driver->beginScene(true, true, iv::SColor(100,150,200,255));
@@ -201,7 +216,7 @@ int main(int argc, char **argv)
     {
       // direction de la camera
       ic::vector3df fight_center = (player1->getPosition() + player2->getPosition())/2.0f;
-      fight_center.Y = 45.0f;
+      fight_center.Y = 35.0f;
       smgr->getActiveCamera()->setTarget(fight_center);
       // distance de la camera
       ic::vector3df offset = ic::vector3df(2.3, 0.5, 0);
@@ -209,81 +224,214 @@ int main(int argc, char **argv)
       smgr->getActiveCamera()->setPosition(new_cam_pos);
     }
     
+    // Close window
     if(receiver.keys[KEY_ESCAPE])
     {
       exit(0);
     }
 
     /******** Personnage 1 *******/
-    if( receiver.keys[KEY_KEY_Z]){  // jump P1
-      new_animation = 'r';
+    // FIGHT
+    if(receiver.keys[KEY_KEY_V]) // Coup de poing
+    {
+      if (animEnd1.enable_action)
+      {
+        // Animation
+        animEnd1.enable_action = false;
+        animEnd1.enable_movement = false;
+        player1->setFrameLoop(12, 24);
+        player1->setLoopMode(false);
+      }
+    }
+    if(receiver.keys[KEY_KEY_B]) // Coup de pied
+    {
+      if (animEnd1.enable_action)
+      {
+        // Animation
+        animEnd1.enable_action = false;
+        animEnd1.enable_movement = false;
+        player1->setFrameLoop(24, 36);
+        player1->setLoopMode(false);
+      }
     }
 
-    if( receiver.keys[KEY_KEY_S]){  // crouch P1
-      new_animation = 'r';
+    // MOVE
+    if(receiver.keys[KEY_KEY_Z]) // jump
+    {
+      if (animEnd1.enable_action)
+      {
+        // Animation
+        animEnd1.enable_action = false;
+        animEnd1.enable_movement = false;
+        player1->setFrameLoop(60, 72);
+        player1->setLoopMode(false);
+      }
     }
-
-    if( receiver.keys[KEY_KEY_D]){ // marcher vers la droite P1
-      frame = frame_id % 13 + 36;
-      frame_id ++; // ADD TIME ELAPSED CONTROL
-      player1->setCurrentFrame(frame);
-      p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, 1);
+    if(receiver.keys[KEY_KEY_S]) // crouch
+    {
+      if (!animEnd1.crouch)
+      {
+        if (animEnd1.enable_action)
+        {
+          // Animation
+          animEnd1.enable_action = false;
+          animEnd1.enable_movement = false;
+          animEnd1.crouch = true;
+          
+          player1->setFrameLoop(48, 54);
+          player1->setLoopMode(false);
+        }
+      }
+    }
+    else
+    {
+      animEnd1.crouch = false;
+    }
+    if(receiver.keys[KEY_KEY_D]) // marcher vers la droite P1
+    {
+      if (!animEnd1.enable_action)
+        p1_position = player1->getPosition() + vitesse/3.0 * ic::vector3df(0, 0, 1);
+      else
+        p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, 1);
+      if (receiver.keys[KEY_KEY_Z])
+        p1_position = player1->getPosition() + vitesse*1.5f * ic::vector3df(0, 0, 1);
       distance = p1_position.getDistanceFrom(player2->getPosition());
       if(distance > MIN_DIST_P1_P2 )
       {
         player1->setPosition(p1_position);
       }
+      if (animEnd1.enable_movement)
+      {
+        // Animation
+        animEnd1.enable_movement = false;
+        player1->setFrameLoop(36, 48);
+        player1->setLoopMode(false);
+      }
     }
-
-    if( receiver.keys[KEY_KEY_Q]) // marcher vers la gauche P1
+    if(receiver.keys[KEY_KEY_Q]) // marcher vers la gauche P1
     {
-      player1->setFrameLoop(36, 48);
-      player1->setLoopMode(false);
-      p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, -1);
+      if (!animEnd1.enable_action)
+        p1_position = player1->getPosition() + vitesse/3.0 * ic::vector3df(0, 0, -1);
+      else
+        p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, -1);
+      if (receiver.keys[KEY_KEY_Z])
+        p1_position = player1->getPosition() + vitesse*1.5f * ic::vector3df(0, 0, -1);
       distance = p1_position.getDistanceFrom(player2->getPosition());
       if(distance < MAX_DIST_P1_P2 && p1_position.Z > MUR_Z_GAUCHE)
       {
         player1->setPosition(p1_position);
       }
+      if (animEnd1.enable_movement)
+      {
+        // Animation
+        animEnd1.enable_movement = false;
+        player1->setFrameLoop(36, 48);
+        player1->setLoopMode(false);
+      }
     }
 
     /******** Personnage 2 *******/
-    if( receiver.keys[KEY_UP]) // jump P2
+    // FIGHT
+    if(receiver.keys[KEY_KEY_L]) // Coup de poing
     {
-      new_animation = 'r';
+      if (animEnd2.enable_action)
+      {
+        // Animation
+        animEnd2.enable_action = false;
+        animEnd2.enable_movement = false;
+        player2->setFrameLoop(12, 24);
+        player2->setLoopMode(false);
+      }
     }
-    if( receiver.keys[KEY_DOWN]) // crouch P2
+    if(receiver.keys[KEY_KEY_M]) // Coup de pied
     {
-      new_animation = 'r';
+      if (animEnd2.enable_action)
+      {
+        // Animation
+        animEnd2.enable_action = false;
+        animEnd2.enable_movement = false;
+        player2->setFrameLoop(24, 36);
+        player2->setLoopMode(false);
+      }
     }
 
-    if( receiver.keys[KEY_RIGHT]) // marcher vers la droite P2
+    // MOVE
+    if(receiver.keys[KEY_UP]) // jump
     {
-      player2->setFrameLoop(36, 48);
-      player2->setLoopMode(false);
-      p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, 1);
+      if (animEnd2.enable_action)
+      {
+        // Animation
+        animEnd2.enable_action = false;
+        animEnd2.enable_movement = false;
+        player2->setFrameLoop(60, 72);
+        player2->setLoopMode(false);
+      }
+    }
+    if(receiver.keys[KEY_DOWN]) // crouch
+    {
+      if (!animEnd2.crouch)
+      {
+        if (animEnd2.enable_action)
+        {
+          // Animation
+          animEnd2.enable_action = false;
+          animEnd2.enable_movement = false;
+          animEnd2.crouch = true;
+          player2->setFrameLoop(48, 54);
+          player2->setLoopMode(false);
+        }
+      }
+    }
+    else
+    {
+      animEnd2.crouch = false;
+    }
+    if(receiver.keys[KEY_RIGHT]) // marcher vers la droite P2
+    {
+      if(!animEnd2.enable_action)
+        p2_position = player2->getPosition() + vitesse/3.0f * ic::vector3df(0, 0, 1);
+      else
+        p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, 1);
+      if (receiver.keys[KEY_UP])
+        p2_position = player2->getPosition() + vitesse*1.5f * ic::vector3df(0, 0, 1);
       distance = p2_position.getDistanceFrom(player1->getPosition());
       if(distance < MAX_DIST_P1_P2 && p2_position.Z < MUR_Z_DROITE)
       {
         player2->setPosition(p2_position);
       }
+      if (animEnd2.enable_movement)
+      {
+        // Animation
+        animEnd2.enable_movement = false;
+        player2->setFrameLoop(36, 48);
+        player2->setLoopMode(false);
+      }
     }
-
-    if( receiver.keys[KEY_LEFT]) // marcher vers la gauche P2
+    if(receiver.keys[KEY_LEFT]) // marcher vers la gauche P2
     {
-      player2->setFrameLoop(36, 48);
-      player2->setLoopMode(false);
-      p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, -1);
+      if(!animEnd2.enable_action)
+        p2_position = player2->getPosition() + vitesse/3.0f * ic::vector3df(0, 0, -1);
+      else
+        p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, -1);
+      if (receiver.keys[KEY_UP])
+        p2_position = player2->getPosition() + vitesse*1.5f * ic::vector3df(0, 0, -1);
       distance = p2_position.getDistanceFrom(player1->getPosition());
       if(distance > MIN_DIST_P1_P2 )
       {
         player2->setPosition(p2_position);
       }
+      if (animEnd2.enable_movement)
+      {
+        // Animation
+        animEnd2.enable_movement = false;
+        player2->setFrameLoop(36, 48);
+        player2->setLoopMode(false);
+      }
     }
     
     // Dessin de la scene :
     smgr->drawAll();
-    //  dessin du gui
+    // Dessin du gui :
     gui->drawAll();
     driver->endScene();
   }

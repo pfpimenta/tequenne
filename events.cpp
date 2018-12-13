@@ -28,25 +28,7 @@ bool EventReceiver::keyboard(const SEvent &event)
     // capturer les touches qui ont ete appuyees:
     keys[event.KeyInput.Key] = event.KeyInput.PressedDown;
   }
-    
-// character animation // TODO faire ca pour P1 et P2
-// if(new_animation != old_animation)
-// {
-//   switch(new_animation)
-//   {
-// 	case 's':
-// 	  perso->setMD2Animation(is::EMAT_STAND);
-// 	  break;
-// 	case 'r':
-// 	  perso->setMD2Animation(is::EMAT_RUN);
-// 	  break;
-// 	case 'b':
-// 	  perso->setMD2Animation(is::EMAT_BOOM);
-// 	  break;  
-//   }
-//   old_animation = new_animation;
-// }
-
+  
   return false;
 }
 
