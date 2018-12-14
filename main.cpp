@@ -7,13 +7,15 @@
 #define WIDTH 640
 #define HEIGHT 480
 #define MIN_DIST_P1_P2 35
-#define MAX_DIST_P1_P2 250
+#define MAX_DIST_P1_P2 300
 #define MUR_Z_DROITE 390
 #define MUR_Z_GAUCHE -225
 #define BARRES_HAUT 10
 #define BARRES_BAS 30
 #define BARRES_BORDS 3
 #define BARRE_TAILLE_W float(WIDTH/2 - 38)
+#define MIN_DIST_PUNCH 45
+#define MIN_DIST_KICK 52
 
 
 
@@ -190,7 +192,7 @@ int main(int argc, char **argv)
   {
     driver->beginScene(true, true, iv::SColor(100,150,200,255));
     
-    float distance_players = player1->getPosition().getDistanceFrom(player2->getPosition());
+    distance = player1->getPosition().getDistanceFrom(player2->getPosition());
 
     /******** CAMERA **********/
     if(debug) // Free look
@@ -207,7 +209,7 @@ int main(int argc, char **argv)
       smgr->getActiveCamera()->setTarget(fight_center);
       // distance de la camera
       ic::vector3df offset = ic::vector3df(2.3, 0.5, 0);
-      ic::vector3df new_cam_pos = fight_center + offset*(30+distance_players/5);
+      ic::vector3df new_cam_pos = fight_center + offset*(30+distance/5);
       smgr->getActiveCamera()->setPosition(new_cam_pos);
     }
     
@@ -223,16 +225,19 @@ int main(int argc, char **argv)
     {
       if (animEnd1.enable_action)
       {
-        // TODO 
-        // AJOUTER CONDITION DE COLLISION
-        // if (collision)
+        if(distance < MIN_DIST_PUNCH)
         {
           // Gestion des points de vie
           barre_rouge_p2->setVisible(true);
           points_vie_manquant_p2 += 5.0f;
+          if (points_vie_manquant_p2 >= points_vie_total_p2)
+          {
+            // P2 mort
+            points_vie_manquant_p2 = 100.0f;
+          }
           taille_barre_rouge_p2 = (points_vie_manquant_p2 / points_vie_total_p2) * BARRE_TAILLE_W;
-          barre_rouge_p2->setRelativePosition(ic::rect<s32>(WIDTH/2 + 24, BARRES_HAUT+BARRES_BORDS, 
-                                                            WIDTH/2 + 24 + taille_barre_rouge_p2, BARRES_BAS-BARRES_BORDS));
+          barre_rouge_p2->setRelativePosition(ic::rect<s32>(WIDTH - 14 - taille_barre_rouge_p2, BARRES_HAUT+BARRES_BORDS, 
+                                                            WIDTH - 14, BARRES_BAS-BARRES_BORDS));
         }
 
         // Animation
@@ -246,6 +251,21 @@ int main(int argc, char **argv)
     {
       if (animEnd1.enable_action)
       {
+        if(distance < MIN_DIST_KICK)
+        {
+          // Gestion des points de vie
+          barre_rouge_p2->setVisible(true);
+          points_vie_manquant_p2 += 10.0f;
+          if (points_vie_manquant_p2 >= points_vie_total_p2)
+          {
+            // P2 mort
+            points_vie_manquant_p2 = 100.0f;
+          }
+          taille_barre_rouge_p2 = (points_vie_manquant_p2 / points_vie_total_p2) * BARRE_TAILLE_W;
+          barre_rouge_p2->setRelativePosition(ic::rect<s32>(WIDTH - 14 - taille_barre_rouge_p2, BARRES_HAUT+BARRES_BORDS, 
+                                                            WIDTH - 14, BARRES_BAS-BARRES_BORDS));
+        }
+
         // Animation
         animEnd1.enable_action = false;
         animEnd1.enable_movement = false;
@@ -335,6 +355,21 @@ int main(int argc, char **argv)
     {
       if (animEnd2.enable_action)
       {
+        if(distance < MIN_DIST_PUNCH) // Collision detectee si assez proche
+        {
+          // Gestion des points de vie
+          barre_rouge_p1->setVisible(true);
+          points_vie_manquant_p1 += 5.0f;
+          if (points_vie_manquant_p1 >= points_vie_total_p1)
+          {
+            // P1 mort
+            points_vie_manquant_p1 = 100.0f;
+          }
+          taille_barre_rouge_p1 = (points_vie_manquant_p1 / points_vie_total_p1) * BARRE_TAILLE_W;
+          barre_rouge_p1->setRelativePosition(ic::rect<s32>(14, BARRES_HAUT+BARRES_BORDS, 
+                                                            14 + taille_barre_rouge_p1, BARRES_BAS-BARRES_BORDS));
+        }
+
         // Animation
         animEnd2.enable_action = false;
         animEnd2.enable_movement = false;
@@ -346,6 +381,21 @@ int main(int argc, char **argv)
     {
       if (animEnd2.enable_action)
       {
+        if(distance < MIN_DIST_KICK)
+        {
+          // Gestion des points de vie
+          barre_rouge_p1->setVisible(true);
+          points_vie_manquant_p1 += 10.0f;
+          if (points_vie_manquant_p1 >= points_vie_total_p1)
+          {
+            // P1 mort
+            points_vie_manquant_p1 = 100.0f;
+          }
+          taille_barre_rouge_p1 = (points_vie_manquant_p1 / points_vie_total_p1) * BARRE_TAILLE_W;
+          barre_rouge_p1->setRelativePosition(ic::rect<s32>(14, BARRES_HAUT+BARRES_BORDS, 
+                                                            14 + taille_barre_rouge_p1, BARRES_BAS-BARRES_BORDS));
+        }
+
         // Animation
         animEnd2.enable_action = false;
         animEnd2.enable_movement = false;

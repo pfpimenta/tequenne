@@ -1,5 +1,6 @@
 # tilde files
 *~
+.vscode/
 
 # Compiled Object files
 *.slo
