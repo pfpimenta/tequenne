@@ -24,6 +24,11 @@ class MyAnimationEndCallback : public is::IAnimationEndCallBack
 				node->setLoopMode(false);
 				node->setCurrentFrame(54);
 			}
+			else if (is_dead)
+			{
+				node->setLoopMode(false);
+				node->setCurrentFrame(96);
+			}
 			else
 			{
 				node->setLoopMode(true);
@@ -36,6 +41,7 @@ class MyAnimationEndCallback : public is::IAnimationEndCallBack
 		bool enable_action;
 		bool enable_movement;
 		bool crouch;
+		bool is_dead;
 };
 
 class EventReceiver : public irr::IEventReceiver
