@@ -4,3 +4,4 @@ kick : 24 - 36
 walk : 36 - 48
 crouch : 48 - 60
 jump : 60 - 72
+hurt : 72 - 84

@@ -238,6 +238,12 @@ int main(int argc, char **argv)
           taille_barre_rouge_p2 = (points_vie_manquant_p2 / points_vie_total_p2) * BARRE_TAILLE_W;
           barre_rouge_p2->setRelativePosition(ic::rect<s32>(WIDTH - 14 - taille_barre_rouge_p2, BARRES_HAUT+BARRES_BORDS, 
                                                             WIDTH - 14, BARRES_BAS-BARRES_BORDS));
+
+          // Animation
+          animEnd2.enable_action = false;
+          animEnd2.enable_movement = false;
+          player2->setFrameLoop(72, 84);
+          player2->setLoopMode(false); 
         }
 
         // Animation
@@ -264,6 +270,12 @@ int main(int argc, char **argv)
           taille_barre_rouge_p2 = (points_vie_manquant_p2 / points_vie_total_p2) * BARRE_TAILLE_W;
           barre_rouge_p2->setRelativePosition(ic::rect<s32>(WIDTH - 14 - taille_barre_rouge_p2, BARRES_HAUT+BARRES_BORDS, 
                                                             WIDTH - 14, BARRES_BAS-BARRES_BORDS));
+
+          // Animation
+          animEnd2.enable_action = false;
+          animEnd2.enable_movement = false;
+          player2->setFrameLoop(72, 84);
+          player2->setLoopMode(false); 
         }
 
         // Animation
@@ -368,6 +380,12 @@ int main(int argc, char **argv)
           taille_barre_rouge_p1 = (points_vie_manquant_p1 / points_vie_total_p1) * BARRE_TAILLE_W;
           barre_rouge_p1->setRelativePosition(ic::rect<s32>(14, BARRES_HAUT+BARRES_BORDS, 
                                                             14 + taille_barre_rouge_p1, BARRES_BAS-BARRES_BORDS));
+
+          // Animation
+          animEnd1.enable_action = false;
+          animEnd1.enable_movement = false;
+          player1->setFrameLoop(72, 84);
+          player1->setLoopMode(false);                                                      
         }
 
         // Animation
@@ -394,6 +412,12 @@ int main(int argc, char **argv)
           taille_barre_rouge_p1 = (points_vie_manquant_p1 / points_vie_total_p1) * BARRE_TAILLE_W;
           barre_rouge_p1->setRelativePosition(ic::rect<s32>(14, BARRES_HAUT+BARRES_BORDS, 
                                                             14 + taille_barre_rouge_p1, BARRES_BAS-BARRES_BORDS));
+
+          // Animation
+          animEnd1.enable_action = false;
+          animEnd1.enable_movement = false;
+          player1->setFrameLoop(72, 84);
+          player1->setLoopMode(false); 
         }
 
         // Animation
