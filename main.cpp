@@ -225,7 +225,7 @@ int main(int argc, char **argv)
     {
       if (animEnd1.enable_action)
       {
-        if(distance < MIN_DIST_PUNCH)
+        if(distance < MIN_DIST_PUNCH && !receiver.keys[KEY_DOWN])
         {
           // Gestion des points de vie
           barre_rouge_p2->setVisible(true);
@@ -251,7 +251,7 @@ int main(int argc, char **argv)
     {
       if (animEnd1.enable_action)
       {
-        if(distance < MIN_DIST_KICK)
+        if(distance < MIN_DIST_KICK && !receiver.keys[KEY_DOWN])
         {
           // Gestion des points de vie
           barre_rouge_p2->setVisible(true);
@@ -355,7 +355,7 @@ int main(int argc, char **argv)
     {
       if (animEnd2.enable_action)
       {
-        if(distance < MIN_DIST_PUNCH) // Collision detectee si assez proche
+        if(distance < MIN_DIST_PUNCH && !receiver.keys[KEY_KEY_S]) // Collision detectee si assez proche
         {
           // Gestion des points de vie
           barre_rouge_p1->setVisible(true);
@@ -381,7 +381,7 @@ int main(int argc, char **argv)
     {
       if (animEnd2.enable_action)
       {
-        if(distance < MIN_DIST_KICK)
+        if(distance < MIN_DIST_KICK && !receiver.keys[KEY_KEY_S])
         {
           // Gestion des points de vie
           barre_rouge_p1->setVisible(true);
