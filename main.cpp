@@ -13,7 +13,7 @@
 #define BARRES_HAUT 10
 #define BARRES_BAS 30
 #define BARRES_BORDS 3
-#define BARRE_TAILLE_W float(WIDTH/2 - 38)
+#define BARRE_TAILLE_W float(WIDTH/2 - 58)
 #define MIN_DIST_PUNCH 45
 #define MIN_DIST_KICK 52
 
@@ -26,10 +26,24 @@ namespace is = irr::scene;
 namespace iv = irr::video;
 namespace ig = irr::gui;
 
-float vitesse = 1.0f;    
+// Variables qui gerent la position des personnages
+float vitesse = 1.25f;    
 ic::vector3df p1_position;
 ic::vector3df p2_position;
 float distance;
+
+// Variables qui gerent les points de vie du personnage (GUI)
+int chrono = 40;
+bool end_timer = false;
+bool end_round = false;
+bool win_p1 = false;
+bool win_p2 = false;
+float points_vie_total_p1 = 100.0f;
+float points_vie_manquant_p1 = 0.0f;
+float points_vie_total_p2 = 100.0f;
+float points_vie_manquant_p2 = 0.0f;
+float taille_barre_rouge_p1 = (points_vie_manquant_p1 / points_vie_total_p1) * BARRE_TAILLE_W;
+float taille_barre_rouge_p2 = (points_vie_manquant_p2 / points_vie_total_p2) * BARRE_TAILLE_W;
 
 int main(int argc, char **argv)
 {
@@ -61,45 +75,124 @@ int main(int argc, char **argv)
 
   iv::IVideoDriver  *driver = device->getVideoDriver();
   is::ISceneManager *smgr = device->getSceneManager();
-  // irr::ITimer *timer = device->getTimer();
+  ig::IGUIEnvironment *gui  = device->getGUIEnvironment();
+  irr::ITimer *timer = device->getTimer();
   
+
   /***************************
    * Creation du GUI
    ***************************/
-  ig::IGUIEnvironment *gui  = device->getGUIEnvironment();
   iv::ITexture *blueLP = driver->getTexture("data/gui/lifePointsBleuBorde.png");
   iv::ITexture *redLP = driver->getTexture("data/gui/lifePointsRouge.png");
   
-  
   /********* Life Points ********/
-  float points_vie_total_p1 = 100.0f;
-  float points_vie_manquant_p1 = 0.0f;
-  float points_vie_total_p2 = 100.0f;
-  float points_vie_manquant_p2 = 0.0f;
-  float taille_barre_rouge_p1 = (points_vie_manquant_p1 / points_vie_total_p1) * BARRE_TAILLE_W;
-  float taille_barre_rouge_p2 = (points_vie_manquant_p2 / points_vie_total_p2) * BARRE_TAILLE_W;
-
   ig::IGUIImage *barre_bleu_p1 = gui->addImage(ic::rect<s32>(10,           BARRES_HAUT, 
-                                                             WIDTH/2 - 20, BARRES_BAS));
+                                                            WIDTH/2 - 40,  BARRES_BAS));
   barre_bleu_p1->setScaleImage(true);
   barre_bleu_p1->setImage(blueLP);
   
-  ig::IGUIImage *barre_bleu_p2 = gui->addImage(ic::rect<s32>(WIDTH/2 + 20, BARRES_HAUT, 
-                                                             WIDTH-10,     BARRES_BAS));
+  ig::IGUIImage *barre_bleu_p2 = gui->addImage(ic::rect<s32>(WIDTH/2 + 40, BARRES_HAUT, 
+                                                            WIDTH-10,      BARRES_BAS));
   barre_bleu_p2->setScaleImage(true);
   barre_bleu_p2->setImage(blueLP);
-  
-  ig::IGUIImage *barre_rouge_p1 = gui->addImage(ic::rect<s32>(14, BARRES_HAUT+BARRES_BORDS,
-							                                                14+taille_barre_rouge_p1, BARRES_BAS-BARRES_BORDS));
+
+  ig::IGUIImage *barre_rouge_p1 = gui->addImage(ic::rect<s32>(14,                       BARRES_HAUT+BARRES_BORDS,
+                                                              14+taille_barre_rouge_p1, BARRES_BAS-BARRES_BORDS));
   barre_rouge_p1->setScaleImage(true);
   barre_rouge_p1->setImage(redLP);
   barre_rouge_p1->setVisible(false);
   
-  ig::IGUIImage *barre_rouge_p2 = gui->addImage(ic::rect<s32>(WIDTH/2 + 24, BARRES_HAUT+BARRES_BORDS,
-							                                                WIDTH/2 + 24 + taille_barre_rouge_p2, BARRES_BAS-BARRES_BORDS));
+  ig::IGUIImage *barre_rouge_p2 = gui->addImage(ic::rect<s32>(WIDTH/2 + 44,                         BARRES_HAUT+BARRES_BORDS,
+                                                              WIDTH/2 + 44 + taille_barre_rouge_p2, BARRES_BAS-BARRES_BORDS));
   barre_rouge_p2->setScaleImage(true);
   barre_rouge_p2->setImage(redLP);
   barre_rouge_p2->setVisible(false);
+
+  /******* Names ********/
+  iv::ITexture *name = driver->getTexture("data/gui/heihachi_name.png");
+
+  ig::IGUIImage *name_p1 = gui->addImage(ic::rect<s32>(10,  BARRES_BAS + 3, 
+                                                       110, BARRES_BAS + 18));
+  name_p1->setScaleImage(true);
+  name_p1->setImage(name);
+
+  ig::IGUIImage *name_p2 = gui->addImage(ic::rect<s32>(WIDTH - 110, BARRES_BAS + 3, 
+                                                       WIDTH - 10,  BARRES_BAS + 18));
+  name_p2->setScaleImage(true);
+  name_p2->setImage(name);
+
+  /******* Rounds *******/
+  iv::ITexture *empty_count = driver->getTexture("data/gui/empty_count.png");
+  iv::ITexture *full_count = driver->getTexture("data/gui/full_count.png");
+
+  ig::IGUIImage *p1_round1 = gui->addImage(ic::rect<s32>(WIDTH/2 - 60, BARRES_BAS + 3, 
+                                                         WIDTH/2 - 40, BARRES_BAS + 18));
+  p1_round1->setScaleImage(true);
+  p1_round1->setImage(empty_count);
+
+  ig::IGUIImage *p2_round1 = gui->addImage(ic::rect<s32>(WIDTH/2 + 40, BARRES_BAS + 3, 
+                                                         WIDTH/2 + 60, BARRES_BAS + 18));
+  p2_round1->setScaleImage(true);
+  p2_round1->setImage(empty_count);
+
+  /****** Timer *******/
+  iv::ITexture *digits[10];
+  digits[0] = driver->getTexture("data/gui/0.png");
+  digits[1] = driver->getTexture("data/gui/1.png");
+  digits[2] = driver->getTexture("data/gui/2.png");
+  digits[3] = driver->getTexture("data/gui/3.png");
+  digits[4] = driver->getTexture("data/gui/4.png");
+  digits[5] = driver->getTexture("data/gui/5.png");
+  digits[6] = driver->getTexture("data/gui/6.png");
+  digits[7] = driver->getTexture("data/gui/7.png");
+  digits[8] = driver->getTexture("data/gui/8.png");
+  digits[9] = driver->getTexture("data/gui/9.png");
+
+  ig::IGUIImage *chrono_10 = gui->addImage(ic::rect<s32>(WIDTH/2 - 35, 10,
+                                                         WIDTH/2,      50)); 
+  chrono_10->setScaleImage(true);
+  ig::IGUIImage *chrono_1  = gui->addImage(ic::rect<s32>(WIDTH/2,      10, 
+                                                         WIDTH/2 + 35, 50)); 
+  chrono_1->setScaleImage(true);
+
+  /******* Annonces *******/
+  iv::ITexture *finalround = driver->getTexture("data/gui/final_round.png");
+  iv::ITexture *ready = driver->getTexture("data/gui/ready.png");
+  iv::ITexture *fight = driver->getTexture("data/gui/fight.png");
+  iv::ITexture *ko = driver->getTexture("data/gui/KO.png");
+  iv::ITexture *p1win = driver->getTexture("data/gui/P1wins.png");
+  iv::ITexture *p2win = driver->getTexture("data/gui/P2wins.png");
+  iv::ITexture *draw = driver->getTexture("data/gui/draw.png");
+
+  ig::IGUIImage *rounds = gui->addImage(ic::rect<s32>(WIDTH/2 - 250, HEIGHT/2 - 100, 
+                                                      WIDTH/2 + 250, HEIGHT/2 - 40));
+  rounds->setScaleImage(true);
+  rounds->setImage(finalround);
+  rounds->setVisible(false);
+
+  ig::IGUIImage *ready_text = gui->addImage(ic::rect<s32>(WIDTH/2 - 250, HEIGHT/2 - 100, 
+                                                          WIDTH/2 + 250, HEIGHT/2 - 40));
+  ready_text->setScaleImage(true);
+  ready_text->setImage(ready);
+  ready_text->setVisible(false);
+
+  ig::IGUIImage *fight_text = gui->addImage(ic::rect<s32>(WIDTH/2 - 250, HEIGHT/2 - 100, 
+                                                          WIDTH/2 + 250, HEIGHT/2 - 40));
+  fight_text->setScaleImage(true);
+  fight_text->setImage(fight);
+  fight_text->setVisible(false);
+
+  ig::IGUIImage *ko_text = gui->addImage(ic::rect<s32>(WIDTH/2 - 250, HEIGHT/2 - 10, 
+                                                       WIDTH/2 + 250, HEIGHT/2 + 40));
+  ko_text->setScaleImage(true);
+  ko_text->setImage(ko);
+  ko_text->setVisible(false);
+
+  ig::IGUIImage *winner = gui->addImage(ic::rect<s32>(WIDTH/2 - 250, HEIGHT/2 - 100, 
+                                                      WIDTH/2 + 250, HEIGHT/2 - 40));
+  winner->setScaleImage(true);
+  winner->setImage(p1win);
+  winner->setVisible(false);
 
   
   /***************************
@@ -185,14 +278,48 @@ int main(int argc, char **argv)
   animEnd2.enable_movement = true;
   animEnd2.crouch = false;
   animEnd2.is_dead = false;
+  bool key_callback_p1 = false;
+  bool key_callback_p2 = false;
 
 
   /*************************
    * MAIN LOOP
    *************************/
+  timer->start();
+  unsigned int previous_time = timer->getTime();
+  chrono = 40;
+  chrono_10->setImage(digits[4]);
+  chrono_1->setImage(digits[0]);
+  unsigned int end_annonce = 6000;
+
   while(device->run())
   {
     driver->beginScene(true, true, iv::SColor(100,150,200,255));
+
+    /****** ANNONCES ******/
+    if (timer->getTime() < end_annonce)
+    {
+      if (timer->getTime() < end_annonce/3)
+      {
+        rounds->setVisible(true);
+      }
+      else if (timer->getTime() < 2*end_annonce/3)
+      {
+        rounds->setVisible(false);
+        ready_text->setVisible(true);
+      }
+      else
+      {
+        ready_text->setVisible(false);
+        fight_text->setVisible(true);
+      }
+    }
+    else if (timer->getTime() >= end_annonce && timer->getTime() < end_annonce + 30) // environ une seule fois
+    {
+      key_callback_p1 = true;
+      key_callback_p2 = true;
+      fight_text->setVisible(false);
+    }
     
     distance = player1->getPosition().getDistanceFrom(player2->getPosition());
 
@@ -225,12 +352,14 @@ int main(int argc, char **argv)
     /******** Personnage 1 *******/
     if (!animEnd1.is_dead)
     {
+      if (key_callback_p1)
+      {
       // FIGHT
       if(receiver.keys[KEY_KEY_V]) // Coup de poing
       {
         if (animEnd1.enable_action)
         {
-          if(distance < MIN_DIST_PUNCH && !receiver.keys[KEY_DOWN])
+          if(distance < MIN_DIST_PUNCH && !receiver.keys[KEY_DOWN] && !end_round)
           {
             // Gestion des points de vie
             barre_rouge_p2->setVisible(true);
@@ -240,11 +369,15 @@ int main(int argc, char **argv)
               // P2 mort
               points_vie_manquant_p2 = 100.0f;
               // Animation mort
+              if (!animEnd2.is_dead)
+              {
+                player2->setFrameLoop(84, 96);
+                player2->setLoopMode(false);
+              }
               animEnd2.enable_action = false;
               animEnd2.enable_movement = false;
               animEnd2.is_dead = true;
-              player2->setFrameLoop(84, 96);
-              player2->setLoopMode(false);
+              key_callback_p2 = false;
             }
             else
             {
@@ -270,7 +403,7 @@ int main(int argc, char **argv)
       {
         if (animEnd1.enable_action)
         {
-          if(distance < MIN_DIST_KICK && !receiver.keys[KEY_DOWN])
+          if(distance < MIN_DIST_KICK && !receiver.keys[KEY_DOWN] && !end_round)
           {
             // Gestion des points de vie
             barre_rouge_p2->setVisible(true);
@@ -279,11 +412,15 @@ int main(int argc, char **argv)
             {
               points_vie_manquant_p2 = 100.0f;
               // Animation mort
+              if (!animEnd2.is_dead)
+              {
+                player2->setFrameLoop(84, 96);
+                player2->setLoopMode(false);
+              }
               animEnd2.enable_action = false;
               animEnd2.enable_movement = false;
               animEnd2.is_dead = true;
-              player2->setFrameLoop(84, 96);
-              player2->setLoopMode(false);
+              key_callback_p2 = false;
             }
             else // P2 blesse
             {
@@ -380,23 +517,28 @@ int main(int argc, char **argv)
           player1->setLoopMode(false);
         }
       }
+      }
     }
     else
     {
-      std::cout << "P2 wins" << std::endl;
+      end_round = true;
+      win_p2 = true;
+      p2_round1->setImage(full_count);
     }
 
 
 
     if (!animEnd2.is_dead)
     {
+      if (key_callback_p2)
+      {
       /******** Personnage 2 *******/
       // FIGHT
       if(receiver.keys[KEY_KEY_L]) // Coup de poing
       {
         if (animEnd2.enable_action)
         {
-          if(distance < MIN_DIST_PUNCH && !receiver.keys[KEY_KEY_S]) // Collision detectee si assez proche
+          if(distance < MIN_DIST_PUNCH && !receiver.keys[KEY_KEY_S] && !end_round) // Collision detectee si assez proche
           {
             // Gestion des points de vie
             barre_rouge_p1->setVisible(true);
@@ -405,11 +547,15 @@ int main(int argc, char **argv)
             {
               points_vie_manquant_p1 = 100.0f;
               // Animation mort
+              if (!animEnd1.is_dead)
+              {
+                player1->setFrameLoop(84, 96);
+                player1->setLoopMode(false);
+              }
               animEnd1.enable_action = false;
               animEnd1.enable_movement = false;
               animEnd1.is_dead = true;
-              player1->setFrameLoop(84, 96);
-              player1->setLoopMode(false);
+              key_callback_p1 = false;
             }
             else // P1 blesse
             {
@@ -435,7 +581,7 @@ int main(int argc, char **argv)
       {
         if (animEnd2.enable_action)
         {
-          if(distance < MIN_DIST_KICK && !receiver.keys[KEY_KEY_S])
+          if(distance < MIN_DIST_KICK && !receiver.keys[KEY_KEY_S] && !end_round)
           {
             // Gestion des points de vie
             barre_rouge_p1->setVisible(true);
@@ -444,11 +590,15 @@ int main(int argc, char **argv)
             {
               points_vie_manquant_p1 = 100.0f;
               // Animation mort
+              if (!animEnd1.is_dead)
+              {
+                player1->setFrameLoop(84, 96);
+                player1->setLoopMode(false);
+              }
               animEnd1.enable_action = false;
               animEnd1.enable_movement = false;
               animEnd1.is_dead = true;
-              player1->setFrameLoop(84, 96);
-              player1->setLoopMode(false);
+              key_callback_p1 = false;
             }
             else // P1 blesse
             {
@@ -544,16 +694,82 @@ int main(int argc, char **argv)
           player2->setLoopMode(false);
         }
       }
+      }
     }
     else // P2 est mort
     {
-      std::cout << "P1 wins" << std::endl;
+      end_round = true;
+      win_p1 = true;
+      p1_round1->setImage(full_count);
     }
     
     // Dessin de la scene :
     smgr->drawAll();
-    // Dessin du gui :
-    gui->drawAll();
+
+    //Mise à jour du chrono :
+    if (animEnd1.is_dead || animEnd2.is_dead)
+      end_timer = true;
+    unsigned int now = timer->getTime();
+    if (!end_timer && (now - previous_time >= 1000) && now > end_annonce)
+    {
+      previous_time = now;
+      chrono--;
+      if (chrono <= 0) // Fin du temps
+      {
+        end_timer = true;
+        // chrono = 40;
+        chrono_10->setImage(digits[0]);
+        chrono_1->setImage(digits[0]);
+        if (points_vie_manquant_p1 > points_vie_manquant_p2)
+        {
+          key_callback_p1 = false;
+          end_round = true;
+          win_p2 = true;
+        }
+        else if (points_vie_manquant_p1 < points_vie_manquant_p2)
+        {
+          key_callback_p2 = false;
+          end_round = true;
+          win_p1 = true;
+        }
+        else
+          end_round = true;
+      }
+      else
+      {
+        chrono_10->setImage(digits[(chrono / 10) % 10]);
+        chrono_1->setImage(digits[(chrono / 1) % 10]);
+      }
+    }
+
+    // Annonce vainqueur
+    if (end_round)
+    { 
+      if (win_p1)
+      {
+        winner->setImage(p1win);
+        winner->setVisible(true);
+        ko_text->setVisible(true);
+      }
+      else if (win_p2)
+      {
+        winner->setImage(p2win);
+        winner->setVisible(true);
+        ko_text->setVisible(true);
+      }
+      else // Draw
+      {
+        winner->setImage(draw);
+        winner->setVisible(true);
+      }
+    }
+
+    if (!debug)
+    {
+      // Dessin du gui :
+      gui->drawAll();
+    }
+    
     driver->endScene();
   }
   device->drop();
