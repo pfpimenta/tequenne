@@ -34,11 +34,17 @@ float distance;
 
 // Variables qui gerent les points de vie du personnage (GUI)
 int chrono = 40;
+int round_id = 1;
+bool reset_round = false;
 bool end_timer = false;
 bool end_round = false;
+bool end_game = false;
 bool start_game = false;
+bool display_win = true;
 bool win_p1 = false;
 bool win_p2 = false;
+int nb_win_p1 = 0;
+int nb_win_p2 = 0;
 float points_vie_total_p1 = 100.0f;
 float points_vie_manquant_p1 = 0.0f;
 float points_vie_total_p2 = 100.0f;
@@ -131,10 +137,20 @@ int main(int argc, char **argv)
   p1_round1->setScaleImage(true);
   p1_round1->setImage(empty_count);
 
+  ig::IGUIImage *p1_round2 = gui->addImage(ic::rect<s32>(WIDTH/2 - 80, BARRES_BAS + 3, 
+                                                         WIDTH/2 - 60, BARRES_BAS + 18));
+  p1_round2->setScaleImage(true);
+  p1_round2->setImage(empty_count);
+
   ig::IGUIImage *p2_round1 = gui->addImage(ic::rect<s32>(WIDTH/2 + 40, BARRES_BAS + 3, 
                                                          WIDTH/2 + 60, BARRES_BAS + 18));
   p2_round1->setScaleImage(true);
   p2_round1->setImage(empty_count);
+
+  ig::IGUIImage *p2_round2 = gui->addImage(ic::rect<s32>(WIDTH/2 + 60, BARRES_BAS + 3, 
+                                                         WIDTH/2 + 80, BARRES_BAS + 18));
+  p2_round2->setScaleImage(true);
+  p2_round2->setImage(empty_count);
 
   /****** Timer *******/
   iv::ITexture *digits[10];
@@ -157,6 +173,8 @@ int main(int argc, char **argv)
   chrono_1->setScaleImage(true);
 
   /******* Annonces *******/
+  iv::ITexture *round1 = driver->getTexture("data/gui/round_1.png");
+  iv::ITexture *round2 = driver->getTexture("data/gui/round_2.png");
   iv::ITexture *finalround = driver->getTexture("data/gui/final_round.png");
   iv::ITexture *ready = driver->getTexture("data/gui/ready.png");
   iv::ITexture *fight = driver->getTexture("data/gui/fight.png");
@@ -164,7 +182,7 @@ int main(int argc, char **argv)
   ig::IGUIImage *rounds = gui->addImage(ic::rect<s32>(WIDTH/2 - 250, HEIGHT/2 - 100, 
                                                       WIDTH/2 + 250, HEIGHT/2 - 40));
   rounds->setScaleImage(true);
-  rounds->setImage(finalround);
+  rounds->setImage(round1);
   rounds->setVisible(false);
 
   ig::IGUIImage *ready_text = gui->addImage(ic::rect<s32>(WIDTH/2 - 250, HEIGHT/2 - 100, 
@@ -218,7 +236,7 @@ int main(int argc, char **argv)
   //node->setMaterialFlag(iv::EMF_LIGHTING, false); // decommenter en dependant du map
   //node->setMaterialType(iv::EMT_TRANSPARENT_ALPHA_CHANNEL); // decommenter en dependant du map
   // Translation pour que nos personnages soient dans le décor
-  node->setPosition(core::vector3df(400,-23,-1200));
+  node->setPosition(ic::vector3df(400,-23,-1200));
 
 
   /***************************
@@ -295,9 +313,22 @@ int main(int argc, char **argv)
    *************************/
   unsigned int previous_time = 0;
   unsigned int end_annonce = 6000;
+  unsigned int reset_time = 0;
   while(device->run())
   {
     driver->beginScene(true, true, iv::SColor(100,150,200,255));
+
+    // Close window
+    if(receiver.keys[KEY_ESCAPE])
+    {
+      exit(0);
+    }
+
+    if (debug)
+    {
+      menu->setVisible(false);
+      start_game = true;
+    }
 
     if (!start_game)
     {
@@ -312,422 +343,492 @@ int main(int argc, char **argv)
         chrono_1->setImage(digits[0]);
       }
     }
-    else
+    else // Le jeu commence
     {
-      /****** ANNONCES ******/
-      if (timer->getTime() < end_annonce)
+      if (reset_round && !end_game) //RESET a la fin de chaque round
       {
-        if (timer->getTime() < end_annonce/3)
+        // TODO 
+        // Changer animation du saut
+        if (nb_win_p1 == 1)
+          p1_round1->setImage(full_count);
+        if (nb_win_p2 == 1)
+          p2_round1->setImage(full_count);
+        
+        if (win_p1 || win_p2) // Sinon on rejoue le round
+          round_id ++;
+        if (round_id == 2)
         {
-          rounds->setVisible(true);
+          rounds->setImage(round2);
         }
-        else if (timer->getTime() < 2*end_annonce/3)
+        else if (round_id == 3)
         {
-          rounds->setVisible(false);
-          ready_text->setVisible(true);
-        }
-        else
-        {
-          ready_text->setVisible(false);
-          fight_text->setVisible(true);
-        }
-      }
-      else if (timer->getTime() >= end_annonce && timer->getTime() < end_annonce + 30) // environ une seule fois
-      {
-        key_callback_p1 = true;
-        key_callback_p2 = true;
-        fight_text->setVisible(false);
-      }
-      
-      distance = player1->getPosition().getDistanceFrom(player2->getPosition());
-
-      /******** CAMERA **********/
-      if(debug) // Free look
-      {
-        // debug print camera position: 
-        ic::vector3df cam_pos = smgr->getActiveCamera()->getPosition();
-        std::cout <<"debug cam pos: " << cam_pos.X << ", " << cam_pos.Y  << ", " << cam_pos.Z <<std::endl;
-      }
-      else // make the camera follow the center of the fight
-      {
-        // direction de la camera
-        ic::vector3df fight_center = (player1->getPosition() + player2->getPosition())/2.0f;
-        fight_center.Y = 35.0f;
-        smgr->getActiveCamera()->setTarget(fight_center);
-        // distance de la camera
-        ic::vector3df offset = ic::vector3df(2.3, 0.5, 0);
-        ic::vector3df new_cam_pos = fight_center + offset*(30+distance/5);
-        smgr->getActiveCamera()->setPosition(new_cam_pos);
-      }
-      
-      // Close window
-      if(receiver.keys[KEY_ESCAPE])
-      {
-        exit(0);
-      }
-
-
-      /******** Personnage 1 *******/
-      if (!animEnd1.is_dead)
-      {
-        if (key_callback_p1)
-        {
-        // FIGHT
-        if(receiver.keys[KEY_KEY_V]) // Coup de poing
-        {
-          if (animEnd1.enable_action)
-          {
-            if(distance < MIN_DIST_PUNCH && !receiver.keys[KEY_DOWN] && !end_round)
-            {
-              // Gestion des points de vie
-              barre_rouge_p2->setVisible(true);
-              points_vie_manquant_p2 += 5.0f;
-              if (points_vie_manquant_p2 >= points_vie_total_p2)
-              {
-                // P2 mort
-                points_vie_manquant_p2 = 100.0f;
-                // Animation mort
-                if (!animEnd2.is_dead)
-                {
-                  player2->setFrameLoop(84, 96);
-                  player2->setLoopMode(false);
-                }
-                animEnd2.enable_action = false;
-                animEnd2.enable_movement = false;
-                animEnd2.is_dead = true;
-                key_callback_p2 = false;
-              }
-              else
-              {
-                // Animation blesse
-                animEnd2.enable_action = false;
-                animEnd2.enable_movement = false;
-                player2->setFrameLoop(72, 84);
-                player2->setLoopMode(false); 
-              }
-              taille_barre_rouge_p2 = (points_vie_manquant_p2 / points_vie_total_p2) * BARRE_TAILLE_W;
-              barre_rouge_p2->setRelativePosition(ic::rect<s32>(WIDTH - 14 - taille_barre_rouge_p2, BARRES_HAUT+BARRES_BORDS, 
-                                                                WIDTH - 14, BARRES_BAS-BARRES_BORDS));
-            }
-
-            // Animation coup de poing
-            animEnd1.enable_action = false;
-            animEnd1.enable_movement = false;
-            player1->setFrameLoop(12, 24);
-            player1->setLoopMode(false);
-          }
-        }
-        if(receiver.keys[KEY_KEY_B]) // Coup de pied
-        {
-          if (animEnd1.enable_action)
-          {
-            if(distance < MIN_DIST_KICK && !receiver.keys[KEY_DOWN] && !end_round)
-            {
-              // Gestion des points de vie
-              barre_rouge_p2->setVisible(true);
-              points_vie_manquant_p2 += 10.0f;
-              if (points_vie_manquant_p2 >= points_vie_total_p2) // P2 mort
-              {
-                points_vie_manquant_p2 = 100.0f;
-                // Animation mort
-                if (!animEnd2.is_dead)
-                {
-                  player2->setFrameLoop(84, 96);
-                  player2->setLoopMode(false);
-                }
-                animEnd2.enable_action = false;
-                animEnd2.enable_movement = false;
-                animEnd2.is_dead = true;
-                key_callback_p2 = false;
-              }
-              else // P2 blesse
-              {
-                // Animation blesse
-                animEnd2.enable_action = false;
-                animEnd2.enable_movement = false;
-                player2->setFrameLoop(72, 84);
-                player2->setLoopMode(false);
-              }
-              taille_barre_rouge_p2 = (points_vie_manquant_p2 / points_vie_total_p2) * BARRE_TAILLE_W;
-              barre_rouge_p2->setRelativePosition(ic::rect<s32>(WIDTH - 14 - taille_barre_rouge_p2, BARRES_HAUT+BARRES_BORDS, 
-                                                                WIDTH - 14, BARRES_BAS-BARRES_BORDS)); 
-            }
-
-            // Animation coup de pied
-            animEnd1.enable_action = false;
-            animEnd1.enable_movement = false;
-            player1->setFrameLoop(24, 36);
-            player1->setLoopMode(false);
-          }
+          rounds->setImage(finalround);
         }
 
-        // MOVE
-        if(receiver.keys[KEY_KEY_Z]) // jump
-        {
-          if (animEnd1.enable_action)
-          {
-            // Animation
-            animEnd1.enable_action = false;
-            animEnd1.enable_movement = false;
-            player1->setFrameLoop(60, 72);
-            player1->setLoopMode(false);
-          }
-        }
-        if(receiver.keys[KEY_KEY_S]) // crouch
-        {
-          if (!animEnd1.crouch)
-          {
-            if (animEnd1.enable_action)
-            {
-              // Animation
-              animEnd1.enable_action = false;
-              animEnd1.enable_movement = false;
-              animEnd1.crouch = true;
-              
-              player1->setFrameLoop(48, 54);
-              player1->setLoopMode(false);
-            }
-          }
-        }
-        else
-        {
-          animEnd1.crouch = false;
-        }
-        if(receiver.keys[KEY_KEY_D]) // marcher vers la droite P1
-        {
-          if (!animEnd1.enable_action)
-            p1_position = player1->getPosition() + vitesse/3.0 * ic::vector3df(0, 0, 1);
-          else
-            p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, 1);
-          if (receiver.keys[KEY_KEY_Z])
-            p1_position = player1->getPosition() + vitesse*1.5f * ic::vector3df(0, 0, 1);
-          distance = p1_position.getDistanceFrom(player2->getPosition());
-          if(distance > MIN_DIST_P1_P2 )
-          {
-            player1->setPosition(p1_position);
-          }
-          if (animEnd1.enable_movement)
-          {
-            // Animation
-            animEnd1.enable_movement = false;
-            player1->setFrameLoop(36, 48);
-            player1->setLoopMode(false);
-          }
-        }
-        if(receiver.keys[KEY_KEY_Q]) // marcher vers la gauche P1
-        {
-          if (!animEnd1.enable_action)
-            p1_position = player1->getPosition() + vitesse/3.0 * ic::vector3df(0, 0, -1);
-          else
-            p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, -1);
-          if (receiver.keys[KEY_KEY_Z])
-            p1_position = player1->getPosition() + vitesse*1.5f * ic::vector3df(0, 0, -1);
-          distance = p1_position.getDistanceFrom(player2->getPosition());
-          if(distance < MAX_DIST_P1_P2 && p1_position.Z > MUR_Z_GAUCHE)
-          {
-            player1->setPosition(p1_position);
-          }
-          if (animEnd1.enable_movement)
-          {
-            // Animation
-            animEnd1.enable_movement = false;
-            player1->setFrameLoop(36, 48);
-            player1->setLoopMode(false);
-          }
-        }
-        }
+        // Annonce
+        reset_round = false;
+        end_round = false;
+        end_timer = false;
+        display_win = true;
+        timer->setTime(0);
+        previous_time = timer->getTime();
+        chrono = 40;
+        chrono_10->setImage(digits[4]);
+        chrono_1->setImage(digits[0]);
+
+        // Animation
+        animEnd1.enable_action = true;
+        animEnd1.enable_movement = true;
+        animEnd1.is_dead = false;
+        key_callback_p1 = false;
+        animEnd2.enable_action = true;
+        animEnd2.enable_movement = true;
+        animEnd2.is_dead = false;
+        key_callback_p2 = false;
+        player1->setFrameLoop(0, 12);
+        player1->setLoopMode(true);
+        player2->setFrameLoop(0, 12);
+        player2->setLoopMode(true);
+
+        // Gui
+        points_vie_manquant_p1 = 0.0f;
+        points_vie_manquant_p2 = 0.0f;
+        taille_barre_rouge_p1 = (points_vie_manquant_p1 / points_vie_total_p1) * BARRE_TAILLE_W;
+        barre_rouge_p1->setRelativePosition(ic::rect<s32>(14, BARRES_HAUT+BARRES_BORDS, 
+                                                          14 + taille_barre_rouge_p1, BARRES_BAS-BARRES_BORDS));
+        barre_rouge_p1->setVisible(false);
+        taille_barre_rouge_p2 = (points_vie_manquant_p2 / points_vie_total_p2) * BARRE_TAILLE_W;
+        barre_rouge_p2->setRelativePosition(ic::rect<s32>(WIDTH - 14 - taille_barre_rouge_p2, BARRES_HAUT+BARRES_BORDS, 
+                                                          WIDTH - 14, BARRES_BAS-BARRES_BORDS));
+        barre_rouge_p2->setVisible(false);
+        win_p1 = false;
+        win_p2 = false;
+        winner->setVisible(false);
+        ko_text->setVisible(false);
+
+        // Position
+        player1->setPosition(core::vector3df(0,-23.5,-50));
+        player2->setPosition(core::vector3df(0,-23.5, 50));
       }
       else
       {
-        end_round = true;
-        win_p2 = true;
-        p2_round1->setImage(full_count);
-      }
-
-
-
-      if (!animEnd2.is_dead)
-      {
-        if (key_callback_p2)
+        /****** ANNONCES ******/
+        if (timer->getTime() < end_annonce)
         {
-        /******** Personnage 2 *******/
-        // FIGHT
-        if(receiver.keys[KEY_KEY_L]) // Coup de poing
-        {
-          if (animEnd2.enable_action)
+          if (timer->getTime() < end_annonce/3)
           {
-            if(distance < MIN_DIST_PUNCH && !receiver.keys[KEY_KEY_S] && !end_round) // Collision detectee si assez proche
+            rounds->setVisible(true);
+          }
+          else if (timer->getTime() < 2*end_annonce/3)
+          {
+            rounds->setVisible(false);
+            ready_text->setVisible(true);
+          }
+          else
+          {
+            ready_text->setVisible(false);
+            fight_text->setVisible(true);
+          }
+        }
+        else if (timer->getTime() >= end_annonce && timer->getTime() < end_annonce + 30) // environ une seule fois
+        {
+          key_callback_p1 = true;
+          key_callback_p2 = true;
+          fight_text->setVisible(false);
+        }
+        
+        distance = player1->getPosition().getDistanceFrom(player2->getPosition());
+
+        /******** CAMERA **********/
+        if(debug) // Free look
+        {
+          // debug print camera position: 
+          ic::vector3df cam_pos = smgr->getActiveCamera()->getPosition();
+          std::cout <<"debug cam pos: " << cam_pos.X << ", " << cam_pos.Y  << ", " << cam_pos.Z <<std::endl;
+        }
+        else // make the camera follow the center of the fight
+        {
+          // direction de la camera
+          ic::vector3df fight_center = (player1->getPosition() + player2->getPosition())/2.0f;
+          fight_center.Y = 35.0f;
+          smgr->getActiveCamera()->setTarget(fight_center);
+          // distance de la camera
+          ic::vector3df offset = ic::vector3df(2.3, 0.5, 0);
+          ic::vector3df new_cam_pos = fight_center + offset*(30+distance/5);
+          smgr->getActiveCamera()->setPosition(new_cam_pos);
+        }
+
+
+        /******** Personnage 1 *******/
+        if (!animEnd1.is_dead)
+        {
+          if (key_callback_p1)
+          {
+            // FIGHT
+            if(receiver.keys[KEY_KEY_V]) // Coup de poing
             {
-              // Gestion des points de vie
-              barre_rouge_p1->setVisible(true);
-              points_vie_manquant_p1 += 5.0f;
-              if (points_vie_manquant_p1 >= points_vie_total_p1) // P1 mort
+              if (animEnd1.enable_action)
               {
-                points_vie_manquant_p1 = 100.0f;
-                // Animation mort
-                if (!animEnd1.is_dead)
+                if(distance < MIN_DIST_PUNCH && !receiver.keys[KEY_DOWN] && !end_round)
                 {
-                  player1->setFrameLoop(84, 96);
-                  player1->setLoopMode(false);
+                  // Gestion des points de vie
+                  barre_rouge_p2->setVisible(true);
+                  points_vie_manquant_p2 += 5.0f;
+                  if (points_vie_manquant_p2 >= points_vie_total_p2)
+                  {
+                    // P2 mort
+                    points_vie_manquant_p2 = 100.0f;
+                    // Animation mort
+                    if (!animEnd2.is_dead)
+                    {
+                      player2->setFrameLoop(84, 96);
+                      player2->setLoopMode(false);
+                    }
+                    animEnd2.enable_action = false;
+                    animEnd2.enable_movement = false;
+                    animEnd2.is_dead = true;
+                    key_callback_p2 = false;
+                    reset_time = timer->getTime();
+                  }
+                  else
+                  {
+                    // Animation blesse
+                    animEnd2.enable_action = false;
+                    animEnd2.enable_movement = false;
+                    player2->setFrameLoop(72, 84);
+                    player2->setLoopMode(false); 
+                  }
+                  taille_barre_rouge_p2 = (points_vie_manquant_p2 / points_vie_total_p2) * BARRE_TAILLE_W;
+                  barre_rouge_p2->setRelativePosition(ic::rect<s32>(WIDTH - 14 - taille_barre_rouge_p2, BARRES_HAUT+BARRES_BORDS, 
+                                                                    WIDTH - 14, BARRES_BAS-BARRES_BORDS));
                 }
+
+                // Animation coup de poing
                 animEnd1.enable_action = false;
                 animEnd1.enable_movement = false;
-                animEnd1.is_dead = true;
-                key_callback_p1 = false;
+                player1->setFrameLoop(12, 24);
+                player1->setLoopMode(false);
               }
-              else // P1 blesse
+            }
+            if(receiver.keys[KEY_KEY_B]) // Coup de pied
+            {
+              if (animEnd1.enable_action)
               {
-                // Animation blesse
+                if(distance < MIN_DIST_KICK && !receiver.keys[KEY_DOWN] && !end_round)
+                {
+                  // Gestion des points de vie
+                  barre_rouge_p2->setVisible(true);
+                  points_vie_manquant_p2 += 10.0f;
+                  if (points_vie_manquant_p2 >= points_vie_total_p2) // P2 mort
+                  {
+                    points_vie_manquant_p2 = 100.0f;
+                    // Animation mort
+                    if (!animEnd2.is_dead)
+                    {
+                      player2->setFrameLoop(84, 96);
+                      player2->setLoopMode(false);
+                    }
+                    animEnd2.enable_action = false;
+                    animEnd2.enable_movement = false;
+                    animEnd2.is_dead = true;
+                    key_callback_p2 = false;
+                    reset_time = timer->getTime();
+                  }
+                  else // P2 blesse
+                  {
+                    // Animation blesse
+                    animEnd2.enable_action = false;
+                    animEnd2.enable_movement = false;
+                    player2->setFrameLoop(72, 84);
+                    player2->setLoopMode(false);
+                  }
+                  taille_barre_rouge_p2 = (points_vie_manquant_p2 / points_vie_total_p2) * BARRE_TAILLE_W;
+                  barre_rouge_p2->setRelativePosition(ic::rect<s32>(WIDTH - 14 - taille_barre_rouge_p2, BARRES_HAUT+BARRES_BORDS, 
+                                                                    WIDTH - 14, BARRES_BAS-BARRES_BORDS)); 
+                }
+
+                // Animation coup de pied
                 animEnd1.enable_action = false;
                 animEnd1.enable_movement = false;
-                player1->setFrameLoop(72, 84);
-                player1->setLoopMode(false); 
+                player1->setFrameLoop(24, 36);
+                player1->setLoopMode(false);
               }
-              taille_barre_rouge_p1 = (points_vie_manquant_p1 / points_vie_total_p1) * BARRE_TAILLE_W;
-              barre_rouge_p1->setRelativePosition(ic::rect<s32>(14, BARRES_HAUT+BARRES_BORDS, 
-                                                                14 + taille_barre_rouge_p1, BARRES_BAS-BARRES_BORDS));                                                     
             }
 
-            // Animation coup de poing
-            animEnd2.enable_action = false;
-            animEnd2.enable_movement = false;
-            player2->setFrameLoop(12, 24);
-            player2->setLoopMode(false);
-          }
-        }
-        if(receiver.keys[KEY_KEY_M]) // Coup de pied
-        {
-          if (animEnd2.enable_action)
-          {
-            if(distance < MIN_DIST_KICK && !receiver.keys[KEY_KEY_S] && !end_round)
+            // MOVE
+            if(receiver.keys[KEY_KEY_Z]) // jump
             {
-              // Gestion des points de vie
-              barre_rouge_p1->setVisible(true);
-              points_vie_manquant_p1 += 10.0f;
-              if (points_vie_manquant_p1 >= points_vie_total_p1) // P1 mort
+              if (animEnd1.enable_action)
               {
-                points_vie_manquant_p1 = 100.0f;
-                // Animation mort
-                if (!animEnd1.is_dead)
+                // Animation
+                animEnd1.enable_action = false;
+                animEnd1.enable_movement = false;
+                player1->setFrameLoop(60, 72);
+                player1->setLoopMode(false);
+              }
+            }
+            if(receiver.keys[KEY_KEY_S]) // crouch
+            {
+              if (!animEnd1.crouch)
+              {
+                if (animEnd1.enable_action)
                 {
-                  player1->setFrameLoop(84, 96);
+                  // Animation
+                  animEnd1.enable_action = false;
+                  animEnd1.enable_movement = false;
+                  animEnd1.crouch = true;
+                  
+                  player1->setFrameLoop(48, 54);
                   player1->setLoopMode(false);
                 }
-                animEnd1.enable_action = false;
-                animEnd1.enable_movement = false;
-                animEnd1.is_dead = true;
-                key_callback_p1 = false;
               }
-              else // P1 blesse
-              {
-                // Animation blesse
-                animEnd1.enable_action = false;
-                animEnd1.enable_movement = false;
-                player1->setFrameLoop(72, 84);
-                player1->setLoopMode(false); 
-              }
-              taille_barre_rouge_p1 = (points_vie_manquant_p1 / points_vie_total_p1) * BARRE_TAILLE_W;
-              barre_rouge_p1->setRelativePosition(ic::rect<s32>(14, BARRES_HAUT+BARRES_BORDS, 
-                                                                14 + taille_barre_rouge_p1, BARRES_BAS-BARRES_BORDS));
             }
-
-            // Animation coup de pied
-            animEnd2.enable_action = false;
-            animEnd2.enable_movement = false;
-            player2->setFrameLoop(24, 36);
-            player2->setLoopMode(false);
-          }
-        }
-
-        // MOVE
-        if(receiver.keys[KEY_UP]) // jump
-        {
-          if (animEnd2.enable_action)
-          {
-            // Animation
-            animEnd2.enable_action = false;
-            animEnd2.enable_movement = false;
-            player2->setFrameLoop(60, 72);
-            player2->setLoopMode(false);
-          }
-        }
-        if(receiver.keys[KEY_DOWN]) // crouch
-        {
-          if (!animEnd2.crouch)
-          {
-            if (animEnd2.enable_action)
+            else
             {
-              // Animation
-              animEnd2.enable_action = false;
-              animEnd2.enable_movement = false;
-              animEnd2.crouch = true;
-              player2->setFrameLoop(48, 54);
-              player2->setLoopMode(false);
+              animEnd1.crouch = false;
+            }
+            if(receiver.keys[KEY_KEY_D]) // marcher vers la droite P1
+            {
+              if (!animEnd1.enable_action)
+                p1_position = player1->getPosition() + vitesse/3.0 * ic::vector3df(0, 0, 1);
+              else
+                p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, 1);
+              if (receiver.keys[KEY_KEY_Z])
+                p1_position = player1->getPosition() + vitesse*1.5f * ic::vector3df(0, 0, 1);
+              distance = p1_position.getDistanceFrom(player2->getPosition());
+              if(distance > MIN_DIST_P1_P2 )
+              {
+                player1->setPosition(p1_position);
+              }
+              if (animEnd1.enable_movement)
+              {
+                // Animation
+                animEnd1.enable_movement = false;
+                player1->setFrameLoop(36, 48);
+                player1->setLoopMode(false);
+              }
+            }
+            if(receiver.keys[KEY_KEY_Q]) // marcher vers la gauche P1
+            {
+              if (!animEnd1.enable_action)
+                p1_position = player1->getPosition() + vitesse/3.0 * ic::vector3df(0, 0, -1);
+              else
+                p1_position = player1->getPosition() + vitesse * ic::vector3df(0, 0, -1);
+              if (receiver.keys[KEY_KEY_Z])
+                p1_position = player1->getPosition() + vitesse*1.5f * ic::vector3df(0, 0, -1);
+              distance = p1_position.getDistanceFrom(player2->getPosition());
+              if(distance < MAX_DIST_P1_P2 && p1_position.Z > MUR_Z_GAUCHE)
+              {
+                player1->setPosition(p1_position);
+              }
+              if (animEnd1.enable_movement)
+              {
+                // Animation
+                animEnd1.enable_movement = false;
+                player1->setFrameLoop(36, 48);
+                player1->setLoopMode(false);
+              }
             }
           }
         }
         else
         {
-          animEnd2.crouch = false;
+          end_round = true;
+          win_p2 = true;
         }
-        if(receiver.keys[KEY_RIGHT]) // marcher vers la droite P2
+
+
+        /******** Personnage 2 *******/
+        if (!animEnd2.is_dead)
         {
-          if(!animEnd2.enable_action)
-            p2_position = player2->getPosition() + vitesse/3.0f * ic::vector3df(0, 0, 1);
-          else
-            p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, 1);
-          if (receiver.keys[KEY_UP])
-            p2_position = player2->getPosition() + vitesse*1.5f * ic::vector3df(0, 0, 1);
-          distance = p2_position.getDistanceFrom(player1->getPosition());
-          if(distance < MAX_DIST_P1_P2 && p2_position.Z < MUR_Z_DROITE)
+          if (key_callback_p2)
           {
-            player2->setPosition(p2_position);
-          }
-          if (animEnd2.enable_movement)
-          {
-            // Animation
-            animEnd2.enable_movement = false;
-            player2->setFrameLoop(36, 48);
-            player2->setLoopMode(false);
+            // FIGHT
+            if(receiver.keys[KEY_KEY_L]) // Coup de poing
+            {
+              if (animEnd2.enable_action)
+              {
+                if(distance < MIN_DIST_PUNCH && !receiver.keys[KEY_KEY_S] && !end_round) // Collision detectee si assez proche
+                {
+                  // Gestion des points de vie
+                  barre_rouge_p1->setVisible(true);
+                  points_vie_manquant_p1 += 5.0f;
+                  if (points_vie_manquant_p1 >= points_vie_total_p1) // P1 mort
+                  {
+                    points_vie_manquant_p1 = 100.0f;
+                    // Animation mort
+                    if (!animEnd1.is_dead)
+                    {
+                      player1->setFrameLoop(84, 96);
+                      player1->setLoopMode(false);
+                    }
+                    animEnd1.enable_action = false;
+                    animEnd1.enable_movement = false;
+                    animEnd1.is_dead = true;
+                    key_callback_p1 = false;
+                    reset_time = timer->getTime();
+                  }
+                  else // P1 blesse
+                  {
+                    // Animation blesse
+                    animEnd1.enable_action = false;
+                    animEnd1.enable_movement = false;
+                    player1->setFrameLoop(72, 84);
+                    player1->setLoopMode(false); 
+                  }
+                  taille_barre_rouge_p1 = (points_vie_manquant_p1 / points_vie_total_p1) * BARRE_TAILLE_W;
+                  barre_rouge_p1->setRelativePosition(ic::rect<s32>(14, BARRES_HAUT+BARRES_BORDS, 
+                                                                    14 + taille_barre_rouge_p1, BARRES_BAS-BARRES_BORDS));                                                     
+                }
+
+                // Animation coup de poing
+                animEnd2.enable_action = false;
+                animEnd2.enable_movement = false;
+                player2->setFrameLoop(12, 24);
+                player2->setLoopMode(false);
+              }
+            }
+            if(receiver.keys[KEY_KEY_M]) // Coup de pied
+            {
+              if (animEnd2.enable_action)
+              {
+                if(distance < MIN_DIST_KICK && !receiver.keys[KEY_KEY_S] && !end_round)
+                {
+                  // Gestion des points de vie
+                  barre_rouge_p1->setVisible(true);
+                  points_vie_manquant_p1 += 10.0f;
+                  if (points_vie_manquant_p1 >= points_vie_total_p1) // P1 mort
+                  {
+                    points_vie_manquant_p1 = 100.0f;
+                    // Animation mort
+                    if (!animEnd1.is_dead)
+                    {
+                      player1->setFrameLoop(84, 96);
+                      player1->setLoopMode(false);
+                    }
+                    animEnd1.enable_action = false;
+                    animEnd1.enable_movement = false;
+                    animEnd1.is_dead = true;
+                    key_callback_p1 = false;
+                    reset_time = timer->getTime();
+                  }
+                  else // P1 blesse
+                  {
+                    // Animation blesse
+                    animEnd1.enable_action = false;
+                    animEnd1.enable_movement = false;
+                    player1->setFrameLoop(72, 84);
+                    player1->setLoopMode(false); 
+                  }
+                  taille_barre_rouge_p1 = (points_vie_manquant_p1 / points_vie_total_p1) * BARRE_TAILLE_W;
+                  barre_rouge_p1->setRelativePosition(ic::rect<s32>(14, BARRES_HAUT+BARRES_BORDS, 
+                                                                    14 + taille_barre_rouge_p1, BARRES_BAS-BARRES_BORDS));
+                }
+
+                // Animation coup de pied
+                animEnd2.enable_action = false;
+                animEnd2.enable_movement = false;
+                player2->setFrameLoop(24, 36);
+                player2->setLoopMode(false);
+              }
+            }
+
+            // MOVE
+            if(receiver.keys[KEY_UP]) // jump
+            {
+              if (animEnd2.enable_action)
+              {
+                // Animation
+                animEnd2.enable_action = false;
+                animEnd2.enable_movement = false;
+                player2->setFrameLoop(60, 72);
+                player2->setLoopMode(false);
+              }
+            }
+            if(receiver.keys[KEY_DOWN]) // crouch
+            {
+              if (!animEnd2.crouch)
+              {
+                if (animEnd2.enable_action)
+                {
+                  // Animation
+                  animEnd2.enable_action = false;
+                  animEnd2.enable_movement = false;
+                  animEnd2.crouch = true;
+                  player2->setFrameLoop(48, 54);
+                  player2->setLoopMode(false);
+                }
+              }
+            }
+            else
+            {
+              animEnd2.crouch = false;
+            }
+            if(receiver.keys[KEY_RIGHT]) // marcher vers la droite P2
+            {
+              if(!animEnd2.enable_action)
+                p2_position = player2->getPosition() + vitesse/3.0f * ic::vector3df(0, 0, 1);
+              else
+                p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, 1);
+              if (receiver.keys[KEY_UP])
+                p2_position = player2->getPosition() + vitesse*1.5f * ic::vector3df(0, 0, 1);
+              distance = p2_position.getDistanceFrom(player1->getPosition());
+              if(distance < MAX_DIST_P1_P2 && p2_position.Z < MUR_Z_DROITE)
+              {
+                player2->setPosition(p2_position);
+              }
+              if (animEnd2.enable_movement)
+              {
+                // Animation
+                animEnd2.enable_movement = false;
+                player2->setFrameLoop(36, 48);
+                player2->setLoopMode(false);
+              }
+            }
+            if(receiver.keys[KEY_LEFT]) // marcher vers la gauche P2
+            {
+              if(!animEnd2.enable_action)
+                p2_position = player2->getPosition() + vitesse/3.0f * ic::vector3df(0, 0, -1);
+              else
+                p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, -1);
+              if (receiver.keys[KEY_UP])
+                p2_position = player2->getPosition() + vitesse*1.5f * ic::vector3df(0, 0, -1);
+              distance = p2_position.getDistanceFrom(player1->getPosition());
+              if(distance > MIN_DIST_P1_P2 )
+              {
+                player2->setPosition(p2_position);
+              }
+              if (animEnd2.enable_movement)
+              {
+                // Animation
+                animEnd2.enable_movement = false;
+                player2->setFrameLoop(36, 48);
+                player2->setLoopMode(false);
+              }
+            }
           }
         }
-        if(receiver.keys[KEY_LEFT]) // marcher vers la gauche P2
+        else // P2 est mort
         {
-          if(!animEnd2.enable_action)
-            p2_position = player2->getPosition() + vitesse/3.0f * ic::vector3df(0, 0, -1);
-          else
-            p2_position = player2->getPosition() + vitesse * ic::vector3df(0, 0, -1);
-          if (receiver.keys[KEY_UP])
-            p2_position = player2->getPosition() + vitesse*1.5f * ic::vector3df(0, 0, -1);
-          distance = p2_position.getDistanceFrom(player1->getPosition());
-          if(distance > MIN_DIST_P1_P2 )
-          {
-            player2->setPosition(p2_position);
-          }
-          if (animEnd2.enable_movement)
-          {
-            // Animation
-            animEnd2.enable_movement = false;
-            player2->setFrameLoop(36, 48);
-            player2->setLoopMode(false);
-          }
+          end_round = true;
+          win_p1 = true;
         }
-        }
+
+        if (nb_win_p1 == 2)
+          p1_round2->setImage(full_count);
+        if (nb_win_p2 == 2)
+          p2_round2->setImage(full_count);
+        
+        // Dessin de la scene :
+        smgr->drawAll();
       }
-      else // P2 est mort
-      {
-        end_round = true;
-        win_p1 = true;
-        p1_round1->setImage(full_count);
-      }
-      
-      // Dessin de la scene :
-      smgr->drawAll();
     }
 
-    //Mise à jour du chrono :
+    // Chronometre
     if (animEnd1.is_dead || animEnd2.is_dead)
+    {
       end_timer = true;
+    }
     unsigned int now = timer->getTime();
     if (!end_timer && (now - previous_time >= 1000) && now > end_annonce)
     {
@@ -736,7 +837,6 @@ int main(int argc, char **argv)
       if (chrono <= 0) // Fin du temps
       {
         end_timer = true;
-        // chrono = 40;
         chrono_10->setImage(digits[0]);
         chrono_1->setImage(digits[0]);
         if (points_vie_manquant_p1 > points_vie_manquant_p2)
@@ -763,23 +863,37 @@ int main(int argc, char **argv)
 
     // Annonce vainqueur
     if (end_round)
-    { 
-      if (win_p1)
+    {
+      if ((timer->getTime() - reset_time >= 5000))
       {
-        winner->setImage(p1win);
-        winner->setVisible(true);
-        ko_text->setVisible(true);
+        reset_round = true;
       }
-      else if (win_p2)
+      else if (display_win)
       {
-        winner->setImage(p2win);
-        winner->setVisible(true);
-        ko_text->setVisible(true);
-      }
-      else // Draw
-      {
-        winner->setImage(draw);
-        winner->setVisible(true);
+        display_win = false;
+        if (win_p1)
+        {
+          winner->setImage(p1win);
+          winner->setVisible(true);
+          ko_text->setVisible(true);
+          nb_win_p1 ++;
+          if (nb_win_p1 >= 2)
+            end_game = true;
+        }
+        else if (win_p2)
+        {
+          winner->setImage(p2win);
+          winner->setVisible(true);
+          ko_text->setVisible(true);
+          nb_win_p2 ++;
+          if (nb_win_p2 >= 2)
+            end_game = true;
+        }
+        else // Draw
+        {
+          winner->setImage(draw);
+          winner->setVisible(true);
+        }
       }
     }
 
