@@ -27,7 +27,7 @@ class MyAnimationEndCallback : public is::IAnimationEndCallBack
 			else if (is_dead)
 			{
 				node->setLoopMode(false);
-				node->setCurrentFrame(96);
+				node->setCurrentFrame(108);
 			}
 			else
 			{

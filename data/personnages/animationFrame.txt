@@ -5,4 +5,4 @@ walk : 36 - 48
 crouch : 48 - 60
 jump : 60 - 72
 hurt : 72 - 84
-death : 84 - 96
+death : 84 - 108

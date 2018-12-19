@@ -347,8 +347,6 @@ int main(int argc, char **argv)
     {
       if (reset_round && !end_game) //RESET a la fin de chaque round
       {
-        // TODO 
-        // Changer animation du saut
         if (nb_win_p1 == 1)
           p1_round1->setImage(full_count);
         if (nb_win_p2 == 1)
@@ -473,7 +471,7 @@ int main(int argc, char **argv)
                 {
                   // Gestion des points de vie
                   barre_rouge_p2->setVisible(true);
-                  points_vie_manquant_p2 += 5.0f;
+                  points_vie_manquant_p2 += 10.0f;
                   if (points_vie_manquant_p2 >= points_vie_total_p2)
                   {
                     // P2 mort
@@ -481,7 +479,7 @@ int main(int argc, char **argv)
                     // Animation mort
                     if (!animEnd2.is_dead)
                     {
-                      player2->setFrameLoop(84, 96);
+                      player2->setFrameLoop(84, 108);
                       player2->setLoopMode(false);
                     }
                     animEnd2.enable_action = false;
@@ -518,14 +516,14 @@ int main(int argc, char **argv)
                 {
                   // Gestion des points de vie
                   barre_rouge_p2->setVisible(true);
-                  points_vie_manquant_p2 += 10.0f;
+                  points_vie_manquant_p2 += 5.0f;
                   if (points_vie_manquant_p2 >= points_vie_total_p2) // P2 mort
                   {
                     points_vie_manquant_p2 = 100.0f;
                     // Animation mort
                     if (!animEnd2.is_dead)
                     {
-                      player2->setFrameLoop(84, 96);
+                      player2->setFrameLoop(84, 108);
                       player2->setLoopMode(false);
                     }
                     animEnd2.enable_action = false;
@@ -652,14 +650,14 @@ int main(int argc, char **argv)
                 {
                   // Gestion des points de vie
                   barre_rouge_p1->setVisible(true);
-                  points_vie_manquant_p1 += 5.0f;
+                  points_vie_manquant_p1 += 10.0f;
                   if (points_vie_manquant_p1 >= points_vie_total_p1) // P1 mort
                   {
                     points_vie_manquant_p1 = 100.0f;
                     // Animation mort
                     if (!animEnd1.is_dead)
                     {
-                      player1->setFrameLoop(84, 96);
+                      player1->setFrameLoop(84, 108);
                       player1->setLoopMode(false);
                     }
                     animEnd1.enable_action = false;
@@ -696,14 +694,14 @@ int main(int argc, char **argv)
                 {
                   // Gestion des points de vie
                   barre_rouge_p1->setVisible(true);
-                  points_vie_manquant_p1 += 10.0f;
+                  points_vie_manquant_p1 += 5.0f;
                   if (points_vie_manquant_p1 >= points_vie_total_p1) // P1 mort
                   {
                     points_vie_manquant_p1 = 100.0f;
                     // Animation mort
                     if (!animEnd1.is_dead)
                     {
-                      player1->setFrameLoop(84, 96);
+                      player1->setFrameLoop(84, 108);
                       player1->setLoopMode(false);
                     }
                     animEnd1.enable_action = false;
@@ -842,17 +840,21 @@ int main(int argc, char **argv)
         if (points_vie_manquant_p1 > points_vie_manquant_p2)
         {
           key_callback_p1 = false;
+          animEnd1.is_dead = true;
           end_round = true;
           win_p2 = true;
         }
         else if (points_vie_manquant_p1 < points_vie_manquant_p2)
         {
           key_callback_p2 = false;
+          animEnd2.is_dead = true;
           end_round = true;
           win_p1 = true;
         }
         else
           end_round = true;
+        
+        reset_time = timer->getTime();
       }
       else
       {
