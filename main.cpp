@@ -225,16 +225,12 @@ int main(int argc, char **argv)
    * Creation du monde
    ***************************/
   // Ajout de l'archive qui contient entre autres un niveau complet
-  device->getFileSystem()->addFileArchive("data/map_oxodm3/map_oxodm3.pk3"); // cs_assault
-  //device->getFileSystem()->addFileArchive("data/DBZArena.zip"); // DBZ arena
+  device->getFileSystem()->addFileArchive("data/map_oxodm3/map_oxodm3.pk3"); // map "cs_assault"
 
   // On charge un bsp (un niveau) en particulier :
-  is::IAnimatedMesh *mesh = smgr->getMesh("oxodm3.bsp"); // cs_assault
-  //is::IAnimatedMesh *mesh = smgr->getMesh("Tenkaichi_Budokai_Arena.obj"); // DBZ arena
+  is::IAnimatedMesh *mesh = smgr->getMesh("oxodm3.bsp");
   is::ISceneNode *node;
   node = smgr->addOctreeSceneNode(mesh->getMesh(0), nullptr, -1, 1024);
-  //node->setMaterialFlag(iv::EMF_LIGHTING, false); // decommenter en dependant du map
-  //node->setMaterialType(iv::EMT_TRANSPARENT_ALPHA_CHANNEL); // decommenter en dependant du map
   // Translation pour que nos personnages soient dans le décor
   node->setPosition(ic::vector3df(400,-23,-1200));
 
