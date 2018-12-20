@@ -454,8 +454,10 @@ int main(int argc, char **argv)
 	  if(annonces == true) //rotation de la camera pendant la duree des annonces
 	  {
 	    float rotation = ((float)timer->getTime() / (float)end_annonce) * 359;
-	    new_cam_pos = fight_center + offset*(66 - rotation/10 + distance/5);
-	    new_cam_pos.rotateXZBy(rotation, fight_center);
+	    new_cam_pos = fight_center + offset*(30 + (359 - rotation)/7 + distance/5);
+	    new_cam_pos.rotateXZBy(-(180 + rotation/2), fight_center); // demi tourne
+	    //new_cam_pos.rotateXZBy(120 + 2*rotation/3, fight_center); // 2/3 de tourne
+	    //new_cam_pos.rotateXZBy(rotation, fight_center); // tourne complet
 	  }else{ // camera "normale" pour le jeu apres les annonces
 	    new_cam_pos = fight_center + offset*(30+distance/5);
 	  }
