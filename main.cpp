@@ -307,9 +307,11 @@ int main(int argc, char **argv)
   /*************************
    * MAIN LOOP
    *************************/
+  bool annonces = true; // boolean qui est true quand les annonces se passent
   unsigned int previous_time = 0;
   unsigned int end_annonce = 6000;
   unsigned int reset_time = 0;
+  
   while(device->run())
   {
     driver->beginScene(true, true, iv::SColor(100,150,200,255));
@@ -409,7 +411,8 @@ int main(int argc, char **argv)
         /****** ANNONCES ******/
         if (timer->getTime() < end_annonce)
         {
-          if (timer->getTime() < end_annonce/3)
+	  annonces = true;
+	  if (timer->getTime() < end_annonce/3)
           {
             rounds->setVisible(true);
           }
@@ -429,7 +432,9 @@ int main(int argc, char **argv)
           key_callback_p1 = true;
           key_callback_p2 = true;
           fight_text->setVisible(false);
-        }
+        }else{
+	  annonces = false;
+	}
         
         distance = player1->getPosition().getDistanceFrom(player2->getPosition());
 
@@ -442,16 +447,24 @@ int main(int argc, char **argv)
         }
         else // make the camera follow the center of the fight
         {
-          // direction de la camera
           ic::vector3df fight_center = (player1->getPosition() + player2->getPosition())/2.0f;
           fight_center.Y = 35.0f;
-          smgr->getActiveCamera()->setTarget(fight_center);
-          // distance de la camera
-          ic::vector3df offset = ic::vector3df(2.3, 0.5, 0);
-          ic::vector3df new_cam_pos = fight_center + offset*(30+distance/5);
+	  ic::vector3df offset = ic::vector3df(2.3, 0.5, 0);
+	  ic::vector3df new_cam_pos;
+	  
+	  if(annonces == true) //rotation de la camera pendant la duree des annonces
+	  {
+	    float rotation = ((float)timer->getTime() / (float)end_annonce) * 359;
+	    new_cam_pos = fight_center + offset*(66 - rotation/10 + distance/5);
+	    new_cam_pos.rotateXZBy(rotation, fight_center);
+	  }else{ // camera "normale" pour le jeu apres les annonces
+	    new_cam_pos = fight_center + offset*(30+distance/5);
+	  }
+	  // direction de la camera
+	  smgr->getActiveCamera()->setTarget(fight_center);
+	  // distance de la camera
           smgr->getActiveCamera()->setPosition(new_cam_pos);
-        }
-
+	}
 
         /******** Personnage 1 *******/
         if (!animEnd1.is_dead)
