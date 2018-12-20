@@ -1,7 +1,6 @@
 #include <iostream>
 #include <irrlicht.h>
 #include "events.h"
-#include "gui.h"
 
 
 #define WIDTH 850
