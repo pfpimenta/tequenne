@@ -8,7 +8,7 @@ Les auteurs:
 * FOLETTO PIMENTA, Pedro
 
 
-## Comment le compiler
+## Comment le compiler et le lancer
 Dans le dossier des sources du jeu (là où se trouve le Makefile), compiler avec la commande `make`. Lancer ensuite l’exécutable `./tequenne`.  
 
 ## Comment le jouer
